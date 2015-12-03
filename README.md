@@ -1,0 +1,2 @@
+# flexicadastre
+SpatialDimensions FlexiCadastre scraper
