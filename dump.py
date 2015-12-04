@@ -4,6 +4,7 @@ import json
 import glob
 import dataset
 from normality import slugify
+from sqlalchemy import BigInteger
 from datetime import datetime
 from pprint import pprint # noqa
 
@@ -48,6 +49,14 @@ def convrow(data):
     return row
 
 
+def column_types(row):
+    types = {}
+    for k, v in row.items():
+        if isinstance(v, int):
+            types[k] = BigInteger
+    return types
+
+
 def parse_file(path):
     with open(path, 'rb') as fh:
         ctx = json.load(fh)
@@ -63,17 +72,21 @@ def parse_file(path):
         lctx.pop('rest_url', None)
 
         tbl_name = slugify('%(source_name)s %(layer_name)s' % lctx, sep='_')
+        database[tbl_name].drop()
         tbl = database[tbl_name]
-        tbl.delete()
 
         features = layer['data']['features']
         print ' -> Generating:', tbl_name
         print '    ', layer['name'], layer['id'], len(features)
 
+        types = None
         for feature in features:
             attrs = convrow(feature.get('attributes'))
             attrs.update(lctx)
-            tbl.insert(attrs)
+            attrs.pop('id', None)
+            if types is None:
+                types = column_types(attrs)
+            tbl.insert(attrs, types=types)
 
         dataset.freeze(tbl, prefix=DEST_PATH, filename='%s.csv' % tbl_name, format='csv')
 
