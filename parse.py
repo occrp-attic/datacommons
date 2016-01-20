@@ -2,7 +2,6 @@
 import os
 import json
 import glob
-import dataset
 from normality import slugify
 from datetime import datetime
 from pprint import pprint # noqa
@@ -47,8 +46,8 @@ def parse_file(path):
     with open(path, 'rb') as fh:
         ctx = json.load(fh)
 
-    if ctx['source_name'] not in ['MZ']:
-        return
+    # if ctx['source_name'] not in ['MZ']:
+    #    return
 
     all_name = slugify('%(source_name)s flexicadastre' % ctx, sep='_')
     all_tbl = database[all_name]

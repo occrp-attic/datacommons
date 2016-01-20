@@ -61,8 +61,8 @@ def parse_file(path):
     with open(path, 'rb') as fh:
         ctx = json.load(fh)
 
-    #if ctx['source_name'] not in ['MZ']:
-    #    return
+    # if ctx['source_name'] not in ['MZ']:
+    #     return
 
     layers = ctx.pop('layers')
     for layer in layers:
@@ -88,7 +88,8 @@ def parse_file(path):
                 types = column_types(attrs)
             tbl.insert(attrs, types=types)
 
-        dataset.freeze(tbl, prefix=DEST_PATH, filename='%s.csv' % tbl_name, format='csv')
+        dataset.freeze(tbl, prefix=DEST_PATH, filename='%s.csv' % tbl_name,
+                       format='csv')
 
 
 if __name__ == '__main__':

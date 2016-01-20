@@ -4,6 +4,7 @@ ARCHIVE=$DATA_PATH/flexicadastre/archive
 mkdir -p $ARCHIVE
 
 python scraper.py
+python parse.py
 python dump.py
 python geo.py
 python geolayers.py
