@@ -5,6 +5,7 @@ mkdir -p $ARCHIVE
 
 python scraper.py
 python parse.py
+python notify.py
 python dump.py
 python geo.py
 python geolayers.py
