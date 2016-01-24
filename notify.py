@@ -98,7 +98,7 @@ def generate_changes():
         changes_table.insert(record, ['key', 'fp'])
         # print record
 
-    for old in changes_table.find():
+    for old in changes_table.find(expired=None):
         if old.get('key') not in keys:
             changes.append({
                 'record_new': {},
