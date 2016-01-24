@@ -19,7 +19,8 @@ SITES = {
     'TZ': 'http://portal.mem.go.tz/map/',
     'ZM': 'http://portals.flexicadastre.com/zambia/',
     'CD': 'http://portals.flexicadastre.com/drc/en/',
-    'SS': 'http://portals.flexicadastre.com/southsudan/'
+    'SS': 'http://portals.flexicadastre.com/southsudan/',
+    'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
 QUERY = {

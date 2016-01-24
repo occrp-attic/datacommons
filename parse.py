@@ -46,10 +46,8 @@ def parse_file(path):
     with open(path, 'rb') as fh:
         ctx = json.load(fh)
 
-    # if ctx['source_name'] not in ['MZ']:
-    #    return
-
-    all_name = slugify('%(source_name)s flexicadastre' % ctx, sep='_')
+    all_name = '%(source_name)s flexicadastre' % ctx
+    all_name = slugify(all_name, sep='_')
     all_tbl = database[all_name]
     all_tbl.delete()
 
@@ -60,7 +58,8 @@ def parse_file(path):
         lctx['layer_id'] = layer['id']
         del lctx['rest_url']
 
-        tbl_name = slugify('%(source_name)s %(layer_name)s' % lctx, sep='_')
+        tbl_name = '%(source_name)s %(layer_name)s' % lctx
+        tbl_name = slugify(tbl_name, sep='_')
         tbl = database[tbl_name]
         tbl.delete()
 
