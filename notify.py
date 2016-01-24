@@ -6,6 +6,7 @@ import hashlib
 from normality import slugify
 from datetime import datetime
 from pprint import pprint # noqa
+from jinja2 import Template
 
 from common import DATA_PATH, database
 
@@ -23,7 +24,7 @@ changes_table = database['flexi_changes']
 
 def parse_features():
     for file_path in glob.glob(os.path.join(SOURCE_PATH, '*')):
-        if 'TZ.json' not in file_path:
+        if 'BW.json' not in file_path:
             continue
         print file_path
         with open(file_path, 'rb') as fh:
@@ -50,7 +51,7 @@ def generate_changes():
     for feat in parse_features():
         key = hashlib.sha1()
         fp = hashlib.sha1()
-        for k in list(feat.keys()):
+        for k in sorted(feat.keys()):
             v = feat.get(k)
             if v is None:
                 continue
@@ -66,9 +67,11 @@ def generate_changes():
         record = {
             'date': TODAY,
             'data': json.dumps(feat),
+            'expired': None,
             'key': key,
             'fp': fp
         }
+
         previous = list(changes_table.find(key=key))
         if len(previous):
             previous = sorted(previous, key=lambda c: c.get('date'))
@@ -92,7 +95,7 @@ def generate_changes():
                 'date_old': None,
                 'operation': 'add'
             })
-        changes_table.upsert(record, ['key', 'fp'])
+        changes_table.insert(record, ['key', 'fp'])
         # print record
 
     for old in changes_table.find():
@@ -104,9 +107,58 @@ def generate_changes():
                 'date_old': old.get('date'),
                 'operation': 'remove'
             })
+            old['expired'] = TODAY
+            changes_table.update(old, ['key', 'fp'])
 
     return changes
 
 
+def render_changes(changes):
+    with open('notification.jinja.html', 'r') as fh:
+        template = Template(fh.read())
+
+    sources = {}
+    for change in changes:
+        data = change.get('record_new') or change.get('record_old')
+
+        source_url = data.get('source_url')
+        if source_url not in sources:
+            sources[source_url] = {
+                'url': source_url,
+                'title': data.get('source_title'),
+                'layers': {}
+            }
+
+        layer_id = data.get('layer_id')
+        if layer_id not in sources[source_url]['layers']:
+            csv_name = '%(source_name)s %(layer_name)s' % data
+            csv_name = slugify(csv_name, sep='_')
+            csv_name = 'http://data.pudo.org/flexicadastre/csv/%s.csv' % csv_name
+
+            sources[source_url]['layers'][layer_id] = {
+                'id': layer_id,
+                'title': data.get('layer_name'),
+                'csv': csv_name,
+                'changes': []
+            }
+
+        change['headers'] = change.get('record_new').keys()
+        change['headers'].extend(change.get('record_old').keys())
+
+        for obj in [change.get('record_new'), change.get('record_old')]:
+            obj.pop('layer_id', None)
+            obj.pop('layer_name', None)
+            obj.pop('source_title', None)
+            obj.pop('source_name', None)
+            obj.pop('source_url', None)
+
+        sources[source_url]['layers'][layer_id]['changes'].append(change)
+
+    out = template.render(sources=sources)
+    with open(os.path.join(DATA_PATH, 'report_%s.html' % TODAY), 'w') as fo:
+        fo.write(out.encode('utf-8'))
+
+
 if __name__ == '__main__':
-    generate_changes()
+    changes = generate_changes()
+    text = render_changes(changes)
