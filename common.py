@@ -16,3 +16,4 @@ requests.packages.urllib3.disable_warnings()
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('alembic').setLevel(logging.WARNING)

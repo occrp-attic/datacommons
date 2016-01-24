@@ -14,22 +14,16 @@ try:
 except:
     pass
 
-# IGNORE_LAYERS = ['Farms', 'Region', 'Districts',
-#                  'Withdrawn Areas', 'Divisions',
-#                  'Environmentally Sensitive Areas',
-#                  'Claims',
-#                  u'Áreas de Conservação - Buffer',
-#                  u'Áreas de Conservação',
-#                  u'Áreas Reservadas']
-
 
 def convrow(data):
     row = {}
     for name, val in data.items():
         name = name.upper()
-        if name.startswith('DTE') and val is not None:
-            dt = datetime.fromtimestamp(int(val) / 1000)
-            val = dt.date().isoformat()
+        if val is not None and isinstance(val, int):
+            if name.startswith('DTE') or name.endswith('_DAT') \
+                    or name.endswith('_DATE') or name.endswith('_D'):
+                dt = datetime.fromtimestamp(int(val) / 1000)
+                val = dt.date().isoformat()
         if name.startswith('GUID'):
             continue
         if name == 'AREA':
@@ -56,7 +50,8 @@ def parse_file(path):
         lctx = ctx.copy()
         lctx['layer_name'] = layer['name']
         lctx['layer_id'] = layer['id']
-        del lctx['rest_url']
+        # print lctx
+        # del lctx['rest_url']
 
         tbl_name = '%(source_name)s %(layer_name)s' % lctx
         tbl_name = slugify(tbl_name, sep='_')
