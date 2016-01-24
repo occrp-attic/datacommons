@@ -21,7 +21,8 @@ def convrow(data):
         name = name.upper()
         if val is not None and isinstance(val, int):
             if name.startswith('DTE') or name.endswith('_DAT') \
-                    or name.endswith('_DATE') or name.endswith('_D'):
+                    or name.endswith('_DATE') or name.endswith('_D') \
+                    or name == 'COMPLETED':
                 dt = datetime.fromtimestamp(int(val) / 1000)
                 val = dt.date().isoformat()
         if name.startswith('GUID'):
