@@ -22,33 +22,29 @@ except:
 changes_table = database['flexi_changes']
 
 
-def parse_features():
-    for file_path in glob.glob(os.path.join(SOURCE_PATH, '*')):
-        if 'BW.json' not in file_path:
-            continue
-        print file_path
-        with open(file_path, 'rb') as fh:
-            ctx = json.load(fh)
+def parse_features(file_path):
+    with open(file_path, 'rb') as fh:
+        ctx = json.load(fh)
 
-        layers = ctx.pop('layers')
-        for layer in layers:
-            lctx = ctx.copy()
-            lctx['layer_name'] = layer['name']
-            lctx['layer_id'] = layer['id']
+    layers = ctx.pop('layers')
+    for layer in layers:
+        lctx = ctx.copy()
+        lctx['layer_name'] = layer['name']
+        lctx['layer_id'] = layer['id']
 
-            for feature in layer['data']['features']:
-                attrs = feature.get('attributes')
-                attrs.update(lctx)
-                data = {}
-                for k, v in attrs.items():
-                    data[slugify(k, sep='_')] = v
-                yield data
+        for feature in layer['data']['features']:
+            attrs = feature.get('attributes')
+            attrs.update(lctx)
+            data = {}
+            for k, v in attrs.items():
+                data[slugify(k, sep='_')] = v
+            yield data
 
 
-def generate_changes():
+def generate_changes(file_path):
     changes = []
     keys = set()
-    for feat in parse_features():
+    for feat in parse_features(file_path):
         key = hashlib.sha1()
         fp = hashlib.sha1()
         for k in sorted(feat.keys()):
@@ -65,6 +61,7 @@ def generate_changes():
         key = key.hexdigest()
         keys.add(key)
         record = {
+            'file_path': file_path,
             'date': TODAY,
             'data': json.dumps(feat),
             'expired': None,
@@ -72,7 +69,7 @@ def generate_changes():
             'fp': fp
         }
 
-        previous = list(changes_table.find(key=key))
+        previous = list(changes_table.find(key=key, file_path=file_path))
         if len(previous):
             previous = sorted(previous, key=lambda c: c.get('date'))
             latest = previous.pop()
@@ -95,10 +92,10 @@ def generate_changes():
                 'date_old': None,
                 'operation': 'add'
             })
-        changes_table.insert(record, ['key', 'fp'])
+        changes_table.insert(record, ['file_path', 'key', 'fp'])
         # print record
 
-    for old in changes_table.find(expired=None):
+    for old in changes_table.find(expired=None, file_path=file_path):
         if old.get('key') not in keys:
             changes.append({
                 'record_new': {},
@@ -114,36 +111,36 @@ def generate_changes():
 
 
 def render_changes(changes):
+    if not len(changes):
+        return None
+
     with open('notification.jinja.html', 'r') as fh:
         template = Template(fh.read())
 
-    sources = {}
+    layers = {}
+    source = {}
     for change in changes:
         data = change.get('record_new') or change.get('record_old')
 
-        source_url = data.get('source_url')
-        if source_url not in sources:
-            sources[source_url] = {
-                'url': source_url,
+        if not len(source):
+            source = {
+                'url': data.get('source_url'),
                 'title': data.get('source_title'),
-                'layers': {}
+                'name': data.get('source_name')
             }
 
         layer_id = data.get('layer_id')
-        if layer_id not in sources[source_url]['layers']:
+        if layer_id not in layers:
             csv_name = '%(source_name)s %(layer_name)s' % data
             csv_name = slugify(csv_name, sep='_')
             csv_name = 'http://data.pudo.org/flexicadastre/csv/%s.csv' % csv_name
 
-            sources[source_url]['layers'][layer_id] = {
+            layers[layer_id] = {
                 'id': layer_id,
                 'title': data.get('layer_name'),
                 'csv': csv_name,
                 'changes': []
             }
-
-        change['headers'] = change.get('record_new').keys()
-        change['headers'].extend(change.get('record_old').keys())
 
         for obj in [change.get('record_new'), change.get('record_old')]:
             obj.pop('layer_id', None)
@@ -152,13 +149,22 @@ def render_changes(changes):
             obj.pop('source_name', None)
             obj.pop('source_url', None)
 
-        sources[source_url]['layers'][layer_id]['changes'].append(change)
+        headers = change.get('record_new').keys()
+        headers.extend(change.get('record_old').keys())
+        change['headers'] = list(sorted(headers))
 
-    out = template.render(sources=sources)
-    with open(os.path.join(DATA_PATH, 'report_%s.html' % TODAY), 'w') as fo:
+        layers[layer_id]['changes'].append(change)
+
+    out = template.render(source=source, layers=layers)
+    out_name = os.path.join(DATA_PATH, 'report_%s_%s.html' % (source['name'], TODAY))
+    with open(out_name, 'w') as fo:
         fo.write(out.encode('utf-8'))
 
 
 if __name__ == '__main__':
-    changes = generate_changes()
-    text = render_changes(changes)
+    for file_path in glob.glob(os.path.join(SOURCE_PATH, '*')):
+        if 'BW.json' not in file_path:
+            continue
+        print file_path
+        changes = generate_changes(file_path)
+        text = render_changes(changes)
