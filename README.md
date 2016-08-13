@@ -22,6 +22,8 @@ $ source env/bin/activate
 (env)$ python scraper.py
 ```
 
+The generated GeoJSON and CSV files will be stored in ``data/`` by default, you can set an alternate location using the ``DATA_PATH`` environment variable.
+
 ## License
 
 The MIT License (MIT)
