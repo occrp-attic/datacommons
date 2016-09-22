@@ -21,6 +21,7 @@ SITES = {
     'UG': 'http://portals.flexicadastre.com/uganda/',
     'NA': 'http://portals.flexicadastre.com/Namibia/',
     'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
+    'LR': 'http://portals.flexicadastre.com/liberia/',
     'KE': 'http://map.miningcadastre.go.ke/map',
     'RW': 'http://portals.flexicadastre.com/rwanda/',
     'TZ': 'http://portal.mem.go.tz/map/',
