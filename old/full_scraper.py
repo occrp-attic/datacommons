@@ -11,10 +11,14 @@ from itertools import count
 import requests.packages.urllib3
 from sqlalchemy.types import BigInteger
 
+DATABASE_URI = os.environ.get('DATABASE_URI', 'sqlite:///:memory:')
+assert DATABASE_URI is not None
+
+DATA_PATH = os.environ.get('DATA_PATH', 'data')
+assert DATA_PATH is not None
+
 log = logging.getLogger(__name__)
-db_uri = os.environ.get('DATABASE_URI', 'sqlite:///data.sqlite')
-database = dataset.connect(db_uri)
-index_table = database['data']
+database = dataset.connect(DATABASE_URI)
 
 requests.packages.urllib3.disable_warnings()
 logging.basicConfig(level=logging.INFO)
@@ -90,15 +94,6 @@ def store_layer_to_db(data, layer, features):
     tbl = database[tbl_name]
     # clear out all existing data.
     tbl.delete()
-    index_table.upsert({
-        'table': tbl_name,
-        'features': len(features),
-        'layer_name': layer['name'],
-        'layer_id': layer['id'],
-        'source_name': data['name'],
-        'source_title': data['title'],
-        'source_url': data['url']
-    }, ['table'])
     rows = []
     types = {}
     for feature in features:
@@ -119,6 +114,48 @@ def store_layer_to_db(data, layer, features):
             row['_attributes'] = json.dumps(feature['attributes'])
         rows.append(row)
     tbl.insert_many(rows, types=types)
+
+    # Dump the table to a CSV file
+    csv_file = '%s.csv' % tbl_name
+    log.info('    -> %s', csv_file)
+    dataset.freeze(tbl, prefix=DATA_PATH, filename=csv_file, format='csv')
+
+
+def store_layer_to_geojson(data, layer, features):
+    """Store the returned data as a GeoJSON file."""
+    # skip if we're not loading geometries:
+    if QUERY['returnGeometry'] != 'true':
+        return
+
+    out = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+    for fdata in features:
+        attrs = {}
+        for k, v in fdata.get('attributes').items():
+            k = k.lower().strip()
+            attrs[k] = v
+
+        if not fdata.get('geometry', {}).get('rings'):
+            continue
+
+        props = dict(attrs)
+        props['layer'] = layer.get('name')
+        out['features'].append({
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': fdata.get('geometry', {}).get('rings')
+            },
+            'properties': props
+        })
+
+    name = slugify('%s %s' % (data['name'], layer.get('name')), sep='_')
+    name = name + '.geojson'
+    log.info('    -> %s', name)
+    with open(os.path.join(DATA_PATH, name), 'wb') as fh:
+        json.dump(out, fh)
 
 
 def scrape_layers(sess, data, token, rest_url):
@@ -142,6 +179,7 @@ def scrape_layers(sess, data, token, rest_url):
             log.info('    -> Skip layer, too few rows')
             continue
         store_layer_to_db(data, layer, features)
+        store_layer_to_geojson(data, layer, features)
 
 
 def scrape_configs():

@@ -1,6 +1,6 @@
 # flexicadastre
 
-The ``scraper.py`` scripts is an importer for [FlexiCadastre](http://www.spatialdimension.com/Map-Portals), a GIS solution developed by SpatialDimension and used to store extractives licensing info for a variety of countries. 
+The ``scraper.py`` scripts is an importer for [FlexiCadastre](http://www.spatialdimension.com/Map-Portals), a GIS solution developed by SpatialDimension and used to store extractives licensing info for a variety of countries.
 
 ## Usage
 
@@ -28,7 +28,7 @@ The generated GeoJSON and CSV files will be stored in ``data/`` by default, you 
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Friedrich Lindenberg
+Copyright (c) 2015-2017 Friedrich Lindenberg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-
-
