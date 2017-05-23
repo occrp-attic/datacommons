@@ -35,7 +35,7 @@ SITES = {
     'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
-IGNORE = ['rw_25ha_grid', 'mz_moz_geol']
+IGNORE = ['rw_25ha_grid', 'mz_moz_geol', 'ug_north']
 
 # there's been some trouble in the past with regards to the
 # greographic reference system used. the settings here
