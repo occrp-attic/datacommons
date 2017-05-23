@@ -157,31 +157,28 @@ def scrape_layers(sess, data, token, rest_url):
     res = sess.get(rest_url, params={'f': 'json', 'token': token})
     log.info('Scraping %(title)r', data)
     for layer in res.json().get('layers'):
+        res_name = '%s %s' % (data['name'], layer['name'])
+        res_name = slugify(res_name, sep='_')
+        log.info('Layer: [%s] %s (%s) ', layer['id'], layer['name'], res_name)
+
+        if res_name in IGNORE:
+            log.info("[%(name)s] Skip (blacklisted)", layer)
+            continue
+
         query_url = '%s/%s/query' % (rest_url, layer['id'])
         q = QUERY.copy()
         q['token'] = token
-        log.info('Layer: [%(id)s] %(name)s ', layer)
         features = []
         for i in count(0):
             q['resultOffset'] = q['resultRecordCount'] * i
             res = sess.get(query_url, params=q)
             page = res.json()
-            features.extend(page['features'])
+            features.extend(page.get('features', []))
             if not page.get('exceededTransferLimit'):
                 break
-        if len(features) < 2:
-            log.info('[%(name)s] Skip layer, too few rows', layer)
-            continue
-
-        res_name = '%s %s' % (data['name'], layer['name'])
-        res_name = slugify(res_name, sep='_')
-        if res_name in IGNORE:
-            log.info("[%(name)s] Skip (blacklisted)", layer)
-            continue
 
         csv_url = store_layer_to_csv(res_name, data, layer, features)
         json_url = store_layer_to_geojson(res_name, data, layer, features)
-
         index_table.upsert({
             'resource': res_name,
             'tag': archive.tag,
