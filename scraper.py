@@ -179,6 +179,9 @@ def scrape_layers(sess, data, token, rest_url):
             if not page.get('exceededTransferLimit'):
                 break
 
+        if not len(features):
+            log.info("[%(name)s] Empty", layer)
+
         csv_url = store_layer_to_csv(res_name, data, layer, features)
         # json_url = store_layer_to_geojson(res_name, data, layer, features)
 
