@@ -35,6 +35,8 @@ SITES = {
     'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
+IGNORE = ['rw_25ha_grid']
+
 # there's been some trouble in the past with regards to the
 # greographic reference system used. the settings here
 # should emit the closest that ESRI will give you in lieu of
@@ -173,6 +175,10 @@ def scrape_layers(sess, data, token, rest_url):
 
         res_name = '%s %s' % (data['name'], layer['name'])
         res_name = slugify(res_name, sep='_')
+        if res_name in IGNORE:
+            log.info("[%(name)s] Skip (blacklisted)", layer)
+            continue
+
         csv_url = store_layer_to_csv(res_name, data, layer, features)
         json_url = store_layer_to_geojson(res_name, data, layer, features)
 
