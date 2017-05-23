@@ -24,12 +24,12 @@ logging.getLogger('alembic').setLevel(logging.WARNING)
 # comment out countries here to disable scraping the
 # respective countries.
 SITES = {
-    'BW': 'http://portals.flexicadastre.com/botswana/',
+    # 'BW': 'http://portals.flexicadastre.com/botswana/',
     'UG': 'http://portals.flexicadastre.com/uganda/',
     'NA': 'http://portals.flexicadastre.com/Namibia/',
     'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
     'LR': 'http://portals.flexicadastre.com/liberia/',
-    'KE': 'http://map.miningcadastre.go.ke/map',
+    'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
     'RW': 'http://portals.flexicadastre.com/rwanda/',
     'TZ': 'http://portal.mem.go.tz/map/',
     'ZM': 'http://portals.flexicadastre.com/zambia/',
