@@ -7,7 +7,7 @@ The ``scraper.py`` scripts is an importer for [FlexiCadastre](http://www.spatial
 Please set up either Python ``virtualenv`` or Docker on your computer to isolate this project. If you're using ``virtualenv``, the
 following should get you up and running:
 
-```bash
+```
 $ git clone https://github.com/pudo/flexicadastre.git flexicadastre
 $ cd flexicadastre
 # Set up the virtualenv (you can also use mkvirtualenv if you have it installed)
