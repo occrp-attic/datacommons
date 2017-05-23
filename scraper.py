@@ -35,7 +35,8 @@ SITES = {
     'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
-IGNORE = ['rw_25ha_grid', 'mz_moz_geol', 'ug_north']
+# IGNORE = ['rw_25ha_grid', 'mz_moz_geol', 'ug_north']
+IGNORE = []
 
 # there's been some trouble in the past with regards to the
 # greographic reference system used. the settings here
@@ -50,7 +51,8 @@ QUERY = {
     'outSR': 102100,  # wgs 84
     'resultRecordCount': 500,
     'resultOffset': 0,
-    'returnGeometry': 'true',
+    # 'returnGeometry': 'true',
+    'returnGeometry': 'false',
     'f': 'pjson'
 }
 
@@ -178,12 +180,13 @@ def scrape_layers(sess, data, token, rest_url):
                 break
 
         csv_url = store_layer_to_csv(res_name, data, layer, features)
-        json_url = store_layer_to_geojson(res_name, data, layer, features)
+        # json_url = store_layer_to_geojson(res_name, data, layer, features)
+
         index_table.upsert({
             'resource': res_name,
             'tag': archive.tag,
             'csv_url': csv_url,
-            'json_url': json_url,
+            # 'json_url': json_url,
             'features': len(features),
             'layer_name': layer['name'],
             'layer_id': layer['id'],
