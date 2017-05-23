@@ -24,18 +24,18 @@ logging.getLogger('alembic').setLevel(logging.WARNING)
 # comment out countries here to disable scraping the
 # respective countries.
 SITES = {
-    #'BW': 'http://portals.flexicadastre.com/botswana/',
-    #'UG': 'http://portals.flexicadastre.com/uganda/',
-    #'NA': 'http://portals.flexicadastre.com/Namibia/',
-    #'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
+    'BW': 'http://portals.flexicadastre.com/botswana/',
+    'UG': 'http://portals.flexicadastre.com/uganda/',
+    'NA': 'http://portals.flexicadastre.com/Namibia/',
+    'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
     'LR': 'http://portals.flexicadastre.com/liberia/',
-    #'KE': 'http://map.miningcadastre.go.ke/map',
-    #'RW': 'http://portals.flexicadastre.com/rwanda/',
-    #'TZ': 'http://portal.mem.go.tz/map/',
-    #'ZM': 'http://portals.flexicadastre.com/zambia/',
-    #'CD': 'http://portals.flexicadastre.com/drc/en/',
-    #'SS': 'http://portals.flexicadastre.com/southsudan/',
-    #'PG': 'http://portal.mra.gov.pg/Map/'
+    'KE': 'http://map.miningcadastre.go.ke/map',
+    'RW': 'http://portals.flexicadastre.com/rwanda/',
+    'TZ': 'http://portal.mem.go.tz/map/',
+    'ZM': 'http://portals.flexicadastre.com/zambia/',
+    'CD': 'http://portals.flexicadastre.com/drc/en/',
+    'SS': 'http://portals.flexicadastre.com/southsudan/',
+    'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
 # there's been some trouble in the past with regards to the
