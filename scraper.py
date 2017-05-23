@@ -7,19 +7,16 @@ import dataset
 # from pprint import pprint
 from normality import slugify
 from datetime import datetime
+from unicodecsv import DictWriter
 from itertools import count
-import requests.packages.urllib3
-from sqlalchemy.types import BigInteger
+from morphium import Archive, env
 
-log = logging.getLogger(__name__)
-db_uri = os.environ.get('DATABASE_URI', 'sqlite:///data.sqlite')
+log = logging.getLogger('flexicadastre')
+db_uri = env('DATABASE_URI', 'sqlite:///data.sqlite')
+archive = Archive(bucket='archive.pudo.org', prefix='flexicadastre')
+data_path = env('DATA_PATH', 'data')
 database = dataset.connect(db_uri)
 index_table = database['data']
-
-requests.packages.urllib3.disable_warnings()
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('requests').setLevel(logging.WARNING)
-logging.getLogger('alembic').setLevel(logging.WARNING)
 
 # comment out countries here to disable scraping the
 # respective countries.
@@ -80,45 +77,77 @@ def convrow(data):
     return row
 
 
-def store_layer_to_db(data, layer, features):
+def store_layer_to_csv(res_name, data, layer, features):
     """Load a layer of features into a database table."""
     # table names are generated from the name of the layer and
     # the name of the country.
-    tbl_name = '%s %s' % (data['name'], layer['name'])
-    tbl_name = slugify(tbl_name, sep='_')
-    log.info('    -> %s: %s rows', tbl_name, len(features))
-    tbl = database[tbl_name]
-    # clear out all existing data.
-    tbl.delete()
-    index_table.upsert({
-        'table': tbl_name,
-        'features': len(features),
-        'layer_name': layer['name'],
-        'layer_id': layer['id'],
-        'source_name': data['name'],
-        'source_title': data['title'],
-        'source_url': data['url']
-    }, ['table'])
-    rows = []
-    types = {}
-    for feature in features:
-        row = convrow(feature['attributes'])
-        for k, v in row.items():
-            if isinstance(v, (int, long)):
-                types[k] = BigInteger
-        row['layer_name'] = layer['name']
-        row['layer_id'] = layer['id']
-        row['source_name'] = data['name']
-        row['source_title'] = data['title']
-        row['source_url'] = data['url']
-        if QUERY['returnGeometry'] == 'true':
+    csv_path = os.path.join(data_path, '%s.csv' % res_name)
+    log.info('CSV: %s: %s rows', csv_path, len(features))
+
+    with open(csv_path, 'w') as fh:
+        writer = None
+        for feature in features:
+            row = convrow(feature['attributes'])
+            row['layer_name'] = layer['name']
+            row['layer_id'] = layer['id']
+            row['source_name'] = data['name']
+            row['source_title'] = data['title']
+            row['source_url'] = data['url']
+
             # store the geometry as JSON. not sure this is a
             # great idea because it may make the resulting
             # CSV files really hard to parse.
-            row['_geometry'] = json.dumps(feature['geometry'])
-            row['_attributes'] = json.dumps(feature['attributes'])
-        rows.append(row)
-    tbl.insert_many(rows, types=types)
+            # row['_geometry'] = json.dumps(feature['geometry'])
+
+            if writer is None:
+                writer = DictWriter(fh, row.keys())
+                writer.writeheader()
+
+            writer.writerow(row)
+
+    url = archive.upload_file(csv_path)
+    os.unlink(csv_path)
+    return url
+
+
+def store_layer_to_geojson(res_name, data, layer, features):
+    """Store the returned data as a GeoJSON file."""
+    # skip if we're not loading geometries:
+    if QUERY['returnGeometry'] != 'true':
+        return
+
+    out = {
+        "type": "FeatureCollection",
+        "features": []
+    }
+    for fdata in features:
+        attrs = {}
+        for k, v in fdata.get('attributes').items():
+            k = k.lower().strip()
+            attrs[k] = v
+
+        if not fdata.get('geometry', {}).get('rings'):
+            continue
+
+        props = dict(attrs)
+        props['layer'] = layer.get('name')
+        out['features'].append({
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': fdata.get('geometry', {}).get('rings')
+            },
+            'properties': props
+        })
+
+    file_path = os.path.join(data_path, '%s.geo.json' % res_name)
+    log.info('GeoJSON: %s', file_path)
+    with open(file_path, 'wb') as fh:
+        json.dump(out, fh)
+
+    url = archive.upload_file(file_path)
+    os.unlink(file_path)
+    return url
 
 
 def scrape_layers(sess, data, token, rest_url):
@@ -129,7 +158,7 @@ def scrape_layers(sess, data, token, rest_url):
         query_url = '%s/%s/query' % (rest_url, layer['id'])
         q = QUERY.copy()
         q['token'] = token
-        log.info('-> Layer: [%(id)s] %(name)s ', layer)
+        log.info('Layer: [%(id)s] %(name)s ', layer)
         features = []
         for i in count(0):
             q['resultOffset'] = q['resultRecordCount'] * i
@@ -139,9 +168,26 @@ def scrape_layers(sess, data, token, rest_url):
             if not page.get('exceededTransferLimit'):
                 break
         if len(features) < 2:
-            log.info('    -> Skip layer, too few rows')
+            log.info('[%(name)s] Skip layer, too few rows', layer)
             continue
-        store_layer_to_db(data, layer, features)
+
+        res_name = '%s %s' % (data['name'], layer['name'])
+        res_name = slugify(res_name, sep='_')
+        csv_url = store_layer_to_csv(res_name, data, layer, features)
+        json_url = store_layer_to_geojson(res_name, data, layer, features)
+
+        index_table.upsert({
+            'resource': res_name,
+            'tag': archive.tag,
+            'csv_url': csv_url,
+            'json_url': json_url,
+            'features': len(features),
+            'layer_name': layer['name'],
+            'layer_id': layer['id'],
+            'source_name': data['name'],
+            'source_title': data['title'],
+            'source_url': data['url']
+        }, ['resource'])
 
 
 def scrape_configs():
@@ -174,4 +220,8 @@ def scrape_configs():
 
 
 if __name__ == '__main__':
+    try:
+        os.makedirs(data_path)
+    except Exception:
+        pass
     scrape_configs()

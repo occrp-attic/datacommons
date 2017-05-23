@@ -1,5 +1,5 @@
 requests
 dataset
 lxml
-psycopg2
 unicodecsv
+morphium
