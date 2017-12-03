@@ -20,20 +20,20 @@ index_table = database['data']
 # comment out countries here to disable scraping the
 # respective countries.
 SITES = {
-    # 'UG': 'http://portals.flexicadastre.com/uganda/',
-    # 'NA': 'http://portals.flexicadastre.com/Namibia/',
-    # 'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
-    # 'MW': 'http://portals.flexicadastre.com/malawi/',
-    # 'LR': 'http://portals.flexicadastre.com/liberia/',
-    # 'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
-    # 'RW': 'http://portals.flexicadastre.com/rwanda/',
-    # 'TZ': 'http://portal.mem.go.tz/map/',
-    # 'ZM': 'http://portals.flexicadastre.com/zambia/',
-    # 'CD': 'http://portals.flexicadastre.com/drc/en/',
-    # 'CI': 'http://portals.flexicadastre.com/cotedivoire/',
+    'UG': 'http://portals.flexicadastre.com/uganda/',
+    'NA': 'http://portals.flexicadastre.com/Namibia/',
+    'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
+    'MW': 'http://portals.flexicadastre.com/malawi/',
+    'LR': 'http://portals.flexicadastre.com/liberia/',
+    'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
+    'RW': 'http://portals.flexicadastre.com/rwanda/',
+    'TZ': 'http://portal.mem.go.tz/map/',
+    'ZM': 'http://portals.flexicadastre.com/zambia/',
+    'CD': 'http://portals.flexicadastre.com/drc/en/',
+    'CI': 'http://portals.flexicadastre.com/cotedivoire/',
     'GN': 'http://guinee.cadastreminier.org/',
-    # 'SS': 'http://portals.flexicadastre.com/southsudan/',
-    # 'PG': 'http://portal.mra.gov.pg/Map/'
+    'SS': 'http://portals.flexicadastre.com/southsudan/',
+    'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
 IGNORE = [
