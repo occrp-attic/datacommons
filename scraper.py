@@ -20,23 +20,35 @@ index_table = database['data']
 # comment out countries here to disable scraping the
 # respective countries.
 SITES = {
-    'UG': 'http://portals.flexicadastre.com/uganda/',
-    'NA': 'http://portals.flexicadastre.com/Namibia/',
-    'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
-    'MW': 'http://portals.flexicadastre.com/malawi/',
-    'LR': 'http://portals.flexicadastre.com/liberia/',
-    'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
-    'RW': 'http://portals.flexicadastre.com/rwanda/',
-    'TZ': 'http://portal.mem.go.tz/map/',
-    'ZM': 'http://portals.flexicadastre.com/zambia/',
-    'CD': 'http://portals.flexicadastre.com/drc/en/',
-    'CI': 'http://portals.flexicadastre.com/cotedivoire/',
+    # 'UG': 'http://portals.flexicadastre.com/uganda/',
+    # 'NA': 'http://portals.flexicadastre.com/Namibia/',
+    # 'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
+    # 'MW': 'http://portals.flexicadastre.com/malawi/',
+    # 'LR': 'http://portals.flexicadastre.com/liberia/',
+    # 'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
+    # 'RW': 'http://portals.flexicadastre.com/rwanda/',
+    # 'TZ': 'http://portal.mem.go.tz/map/',
+    # 'ZM': 'http://portals.flexicadastre.com/zambia/',
+    # 'CD': 'http://portals.flexicadastre.com/drc/en/',
+    # 'CI': 'http://portals.flexicadastre.com/cotedivoire/',
     'GN': 'http://guinee.cadastreminier.org/',
-    'SS': 'http://portals.flexicadastre.com/southsudan/',
-    'PG': 'http://portal.mra.gov.pg/Map/'
+    # 'SS': 'http://portals.flexicadastre.com/southsudan/',
+    # 'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
 IGNORE = [
+    'gn_geologique',
+    'gn_forests',
+    'gn_country_border',
+    'gn_regions',
+    'mz_fronteiras_nacionais',
+    'mz_areas_interditas',
+    'mz_moz_geol',
+    'na_geology',
+    'na_withdrawn_areas',
+    'na_environmentally_sensitive_areas',
+    'na_country',
+    'na_farms',
     'ke_parks_and_reserves',
     'ke_forests',
     'ke_counties',
@@ -48,7 +60,42 @@ IGNORE = [
     'ug_border',
     'ug_north',
     'ug_south',
-    'ug_protected_areas'
+    'ug_protected_areas',
+    'pg_districts',
+    'pg_local_level_governments',
+    'pg_country',
+    'pg_reserved_30_day_areas',
+    'pg_provinces',
+    'rw_protected_areas',
+    'rw_national_parks',
+    'rw_country',
+    'rw_provinces',
+    'rw_districts',
+    'rw_sectors',
+    'rw_cells',
+    'rw_25ha_grid',
+    'rw_100ha_grid',
+    'rw_400ha_grid',
+    'ss_geology',
+    'ss_geology200m',
+    'ss_wildlife_conservation_areas',
+    'ss_country_boundary_250m_restriction',
+    'ss_country_boundary',
+    'ss_lakes_marshlands',
+    'cd_drc_geology',
+    'cd_grid',
+    'tz_geology',
+    'tz_protected_areas',
+    'tz_demarcated_areas',
+    'tz_districts',
+    'tz_boundary',
+    'zm_geology',
+    'zm_national_parks',
+    'zm_boundary',
+    'ci_parc_national',
+    'ci_frontires',
+    'mw_malawi',
+    'mw_malawiborder_webmerc'
 ]
 
 # there's been some trouble in the past with regards to the
@@ -98,7 +145,7 @@ def convrow(data):
 def store_layer_to_csv(res_name, data, layer, features):
     """Load a layer of features into a database table."""
     csv_path = os.path.join(data_path, '%s.csv' % res_name)
-    log.info('CSV: %s: %s rows', csv_path, len(features))
+    # log.info('CSV: %s: %s rows', csv_path, len(features))
 
     with open(csv_path, 'w') as fh:
         writer = None
@@ -116,7 +163,7 @@ def store_layer_to_csv(res_name, data, layer, features):
 
             writer.writerow(row)
     url = archive.upload_file(csv_path)
-    # os.unlink(csv_path)
+    os.unlink(csv_path)
     return url
 
 
@@ -168,7 +215,9 @@ def load_features(url, token, extent):
     page = res.json()
     for feature in page.get('features', []):
         attrs = feature.get('attributes')
-        obj = attrs.get('OBJECTID_1')
+        obj = attrs.get('guidPart')
+        obj = obj or attrs.get('OBJECTID_1')
+        obj = obj or attrs.get('OBJECTID_12')
         obj = obj or attrs.get('OBJECTID')
         obj = obj or attrs.get('ESRI_OID')
         if obj is None:
@@ -191,14 +240,15 @@ def scrape_layers(sess, data, token, rest_url):
     if token is not None:
         params['token'] = token
     res = sess.get(rest_url, params=params)
-    layer = res.json()
-    extent = layer['fullExtent']
-    for layer in res.json().get('layers'):
+    site_info = res.json()
+    # pprint(site_info)
+    extent = site_info['fullExtent']
+    for layer in site_info.get('layers'):
         res_name = '%s %s' % (data['name'], layer['name'])
         res_name = slugify(res_name, sep='_')
         log.info('Layer: [%s] %s (%s) ', layer['id'], layer['name'], res_name)
 
-        if res_name in IGNORE:
+        if res_name in IGNORE or res_name.startswith('pg_geol'):
             log.info("[%(name)s] Skip (blacklisted)", layer)
             continue
 
@@ -253,6 +303,8 @@ def scrape_configs():
         try:
             for service in cfg['MapServices']:
                 if service['MapServiceType'] in ['Dynamic', 'Features']:
+                    token = token or service.get('ArcGISToken')
+                    # pprint(service)
                     rest_url = service['RestUrl']
                     scrape_layers(sess, data, token, rest_url)
         except Exception, e:
