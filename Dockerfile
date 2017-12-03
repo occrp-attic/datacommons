@@ -1,9 +1,12 @@
-FROM pudo/scraper-base
-MAINTAINER Friedrich Lindenberg <friedrich@pudo.org>
+FROM debian:jessie
 
-RUN apt-get install -y gdal-bin python-gdal
+RUN apt-get update \
+    && apt-get install -y \
+        python-pip python-dev libxml2-dev libxslt1-dev build-essential lib32z1-dev
+COPY requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt
 
-COPY . /scraper
+RUN mkdir /scraper
+COPY scraper.py /scraper
 WORKDIR /scraper
-RUN pip install -r requirements.txt
-CMD sh run.sh
+CMD python scraper.py

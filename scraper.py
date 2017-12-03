@@ -4,11 +4,10 @@ import json
 import logging
 import requests
 import dataset
-# from pprint import pprint
+from pprint import pprint
 from normality import slugify
 from datetime import datetime
 from unicodecsv import DictWriter
-from itertools import count
 from morphium import Archive, env
 
 log = logging.getLogger('flexicadastre')
@@ -21,22 +20,36 @@ index_table = database['data']
 # comment out countries here to disable scraping the
 # respective countries.
 SITES = {
-    # 'BW': 'http://portals.flexicadastre.com/botswana/',
     'UG': 'http://portals.flexicadastre.com/uganda/',
     'NA': 'http://portals.flexicadastre.com/Namibia/',
     'MZ': 'http://portals.flexicadastre.com/mozambique/en/',
+    'MW': 'http://portals.flexicadastre.com/malawi/',
     'LR': 'http://portals.flexicadastre.com/liberia/',
     'KE': 'https://portal.miningcadastre.go.ke/mapportal/',
     'RW': 'http://portals.flexicadastre.com/rwanda/',
     'TZ': 'http://portal.mem.go.tz/map/',
     'ZM': 'http://portals.flexicadastre.com/zambia/',
     'CD': 'http://portals.flexicadastre.com/drc/en/',
+    'CI': 'http://portals.flexicadastre.com/cotedivoire/',
+    'GN': 'http://guinee.cadastreminier.org/',
     'SS': 'http://portals.flexicadastre.com/southsudan/',
     'PG': 'http://portal.mra.gov.pg/Map/'
 }
 
-# IGNORE = ['rw_25ha_grid', 'mz_moz_geol', 'ug_north']
-IGNORE = []
+IGNORE = [
+    'ke_parks_and_reserves',
+    'ke_forests',
+    'ke_counties',
+    'ke_geology',
+    'ke_boundary',
+    'lr_protected_areas',
+    'lr_liberia_border',
+    'lr_counties',
+    'ug_border',
+    'ug_north',
+    'ug_south',
+    'ug_protected_areas'
+]
 
 # there's been some trouble in the past with regards to the
 # greographic reference system used. the settings here
@@ -45,12 +58,13 @@ IGNORE = []
 QUERY = {
     'where': '1=1',
     'outFields': '*',
-    'geometryType': 'esriGeometryPolygon',
+    'geometryType': 'esriGeometryEnvelope',
+    # 'geometryType': 'esriGeometryPolygon',
     'spatialRel': 'esriSpatialRelIntersects',
     # 'units': 'esriSRUnit_Meter',
-    'outSR': 102100,  # wgs 84
-    'resultRecordCount': 500,
-    'resultOffset': 0,
+    # 'outSR': 102100,  # wgs 84
+    # 'resultRecordCount': 500,
+    # 'resultOffset': 0,
     # 'returnGeometry': 'true',
     'returnGeometry': 'false',
     'f': 'pjson'
@@ -83,81 +97,102 @@ def convrow(data):
 
 def store_layer_to_csv(res_name, data, layer, features):
     """Load a layer of features into a database table."""
-    # table names are generated from the name of the layer and
-    # the name of the country.
     csv_path = os.path.join(data_path, '%s.csv' % res_name)
     log.info('CSV: %s: %s rows', csv_path, len(features))
 
     with open(csv_path, 'w') as fh:
         writer = None
         for feature in features:
-            row = convrow(feature['attributes'])
+            row = convrow(feature)
             row['layer_name'] = layer['name']
             row['layer_id'] = layer['id']
             row['source_name'] = data['name']
             row['source_title'] = data['title']
             row['source_url'] = data['url']
 
-            # store the geometry as JSON. not sure this is a
-            # great idea because it may make the resulting
-            # CSV files really hard to parse.
-            # row['_geometry'] = json.dumps(feature['geometry'])
-
             if writer is None:
                 writer = DictWriter(fh, row.keys())
                 writer.writeheader()
 
             writer.writerow(row)
-
     url = archive.upload_file(csv_path)
-    os.unlink(csv_path)
+    # os.unlink(csv_path)
     return url
 
 
-def store_layer_to_geojson(res_name, data, layer, features):
-    """Store the returned data as a GeoJSON file."""
-    # skip if we're not loading geometries:
-    if QUERY['returnGeometry'] != 'true':
-        return
+def split_envelope(env):
+    xmin = env['xmin']
+    xlen = env['xmax'] - env['xmin']
+    xhalf = xlen / 2.0
+    ymin = env['ymin']
+    ylen = env['ymax'] - env['ymin']
+    yhalf = ylen / 2.0
 
-    out = {
-        "type": "FeatureCollection",
-        "features": []
+    yield {
+        'spatialReference': env['spatialReference'],
+        'xmax': xmin + xhalf,
+        'xmin': xmin,
+        'ymax': ymin + yhalf,
+        'ymin': ymin,
     }
-    for fdata in features:
-        attrs = {}
-        for k, v in fdata.get('attributes').items():
-            k = k.lower().strip()
-            attrs[k] = v
+    yield {
+        'spatialReference': env['spatialReference'],
+        'xmax': xmin + xlen,
+        'xmin': xmin + xhalf,
+        'ymax': ymin + yhalf,
+        'ymin': ymin,
+    }
+    yield {
+        'spatialReference': env['spatialReference'],
+        'xmax': xmin + xhalf,
+        'xmin': xmin,
+        'ymax': ymin + ylen,
+        'ymin': ymin + yhalf,
+    }
+    yield {
+        'spatialReference': env['spatialReference'],
+        'xmax': xmin + xlen,
+        'xmin': xmin + xhalf,
+        'ymax': ymin + ylen,
+        'ymin': ymin + yhalf,
+    }
 
-        if not fdata.get('geometry', {}).get('rings'):
-            continue
 
-        props = dict(attrs)
-        props['layer'] = layer.get('name')
-        out['features'].append({
-            'type': 'Feature',
-            'geometry': {
-                'type': 'Polygon',
-                'coordinates': fdata.get('geometry', {}).get('rings')
-            },
-            'properties': props
-        })
-
-    file_path = os.path.join(data_path, '%s.geo.json' % res_name)
-    log.info('GeoJSON: %s', file_path)
-    with open(file_path, 'wb') as fh:
-        json.dump(out, fh)
-
-    url = archive.upload_file(file_path)
-    os.unlink(file_path)
-    return url
+def load_features(url, token, extent):
+    q = QUERY.copy()
+    if token is not None:
+        q['token'] = token
+    features = {}
+    q['geometry'] = json.dumps(extent)
+    res = requests.get(url, params=q)
+    page = res.json()
+    for feature in page.get('features', []):
+        attrs = feature.get('attributes')
+        obj = attrs.get('OBJECTID_1')
+        obj = obj or attrs.get('OBJECTID')
+        obj = obj or attrs.get('ESRI_OID')
+        if obj is None:
+            pprint(attrs)
+        else:
+            features[obj] = attrs
+    if page.get('exceededTransferLimit'):
+        for child in split_envelope(extent):
+            fs = load_features(url, token, child)
+            features.update(fs)
+    return features
 
 
 def scrape_layers(sess, data, token, rest_url):
     # This is the actual scraping of the ESRI API.
-    res = sess.get(rest_url, params={'f': 'json', 'token': token})
-    log.info('Scraping %(title)r', data)
+    log.info('Scraping: %(title)s', data)
+    params = {
+        'f': 'json'
+    }
+    if token is not None:
+        params['token'] = token
+    res = sess.get(rest_url, params=params)
+    layer = res.json()
+    extent = layer['fullExtent']
     for layer in res.json().get('layers'):
         res_name = '%s %s' % (data['name'], layer['name'])
         res_name = slugify(res_name, sep='_')
@@ -168,28 +203,19 @@ def scrape_layers(sess, data, token, rest_url):
             continue
 
         query_url = '%s/%s/query' % (rest_url, layer['id'])
-        q = QUERY.copy()
-        q['token'] = token
-        features = []
-        for i in count(0):
-            q['resultOffset'] = q['resultRecordCount'] * i
-            res = sess.get(query_url, params=q)
-            page = res.json()
-            features.extend(page.get('features', []))
-            if not page.get('exceededTransferLimit'):
-                break
+        features = load_features(query_url, token, extent)
+        features = features.values()
 
         if not len(features):
             log.info("[%(name)s] Empty", layer)
+            continue
 
         csv_url = store_layer_to_csv(res_name, data, layer, features)
-        # json_url = store_layer_to_geojson(res_name, data, layer, features)
 
         index_table.upsert({
             'resource': res_name,
             'tag': archive.tag,
             'csv_url': csv_url,
-            # 'json_url': json_url,
             'features': len(features),
             'layer_name': layer['name'],
             'layer_id': layer['id'],
@@ -213,7 +239,12 @@ def scrape_configs():
 
         text = '"%s"' % text
         cfg = json.loads(json.loads(text))
-        token = cfg['Extras'].pop()
+
+        extras = cfg.get('Extras')
+        token = None
+        if extras and len(extras):
+            token = extras.pop()
+
         data = {
             'name': name,
             'title': cfg['Title'],
@@ -221,7 +252,7 @@ def scrape_configs():
         }
         try:
             for service in cfg['MapServices']:
-                if service['MapServiceType'] == 'Features':
+                if service['MapServiceType'] in ['Dynamic', 'Features']:
                     rest_url = service['RestUrl']
                     scrape_layers(sess, data, token, rest_url)
         except Exception, e:
