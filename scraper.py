@@ -4,7 +4,7 @@ import json
 import logging
 import requests
 import dataset
-from pprint import pprint
+from pprint import pprint  # noqa
 from normality import slugify
 from datetime import datetime
 from unicodecsv import DictWriter
@@ -142,31 +142,6 @@ def convrow(data):
     return row
 
 
-def store_layer_to_csv(res_name, data, layer, features):
-    """Load a layer of features into a database table."""
-    csv_path = os.path.join(data_path, '%s.csv' % res_name)
-    # log.info('CSV: %s: %s rows', csv_path, len(features))
-
-    with open(csv_path, 'w') as fh:
-        writer = None
-        for feature in features:
-            row = convrow(feature)
-            row['layer_name'] = layer['name']
-            row['layer_id'] = layer['id']
-            row['source_name'] = data['name']
-            row['source_title'] = data['title']
-            row['source_url'] = data['url']
-
-            if writer is None:
-                writer = DictWriter(fh, row.keys())
-                writer.writeheader()
-
-            writer.writerow(row)
-    url = archive.upload_file(csv_path)
-    os.unlink(csv_path)
-    return url
-
-
 def split_envelope(env):
     xmin = env['xmin']
     xlen = env['xmax'] - env['xmin']
@@ -205,11 +180,10 @@ def split_envelope(env):
     }
 
 
-def load_features(url, token, extent):
+def load_features(url, token, seen, extent):
     q = QUERY.copy()
     if token is not None:
         q['token'] = token
-    features = {}
     q['geometry'] = json.dumps(extent)
     res = requests.get(url, params=q)
     page = res.json()
@@ -221,52 +195,52 @@ def load_features(url, token, extent):
         obj = obj or attrs.get('OBJECTID')
         obj = obj or attrs.get('ESRI_OID')
         if obj is None:
-            pprint(attrs)
-        else:
-            features[obj] = attrs
+            log.info("Missing ID: %r", attrs.keys())
+        if obj not in seen:
+            seen.add(obj)
+            yield attrs
     if page.get('exceededTransferLimit'):
         for child in split_envelope(extent):
-            fs = load_features(url, token, child)
-            features.update(fs)
-    return features
+            for attrs in load_features(url, token, seen, child):
+                yield attrs
 
 
-def scrape_layers(sess, data, token, rest_url):
-    # This is the actual scraping of the ESRI API.
-    log.info('Scraping: %(title)s', data)
-    params = {
-        'f': 'json'
-    }
-    if token is not None:
-        params['token'] = token
-    res = sess.get(rest_url, params=params)
-    site_info = res.json()
-    # pprint(site_info)
-    extent = site_info['fullExtent']
-    for layer in site_info.get('layers'):
-        res_name = '%s %s' % (data['name'], layer['name'])
-        res_name = slugify(res_name, sep='_')
-        log.info('Layer: [%s] %s (%s) ', layer['id'], layer['name'], res_name)
+def scrape_layer(data, token, rest_url, extent, layer):
+    res_name = '%s %s' % (data['name'], layer['name'])
+    res_name = slugify(res_name, sep='_')
+    csv_path = os.path.join(data_path, '%s.csv' % res_name)
+    log.info('Layer: [%s] %s (%s) ', layer['id'], layer['name'], csv_path)
 
-        if res_name in IGNORE or res_name.startswith('pg_geol'):
-            log.info("[%(name)s] Skip (blacklisted)", layer)
-            continue
+    if res_name in IGNORE or res_name.startswith('pg_geol'):
+        log.info("[%(name)s] Skip (blacklisted)", layer)
+        return
 
-        query_url = '%s/%s/query' % (rest_url, layer['id'])
-        features = load_features(query_url, token, extent)
-        features = features.values()
+    query_url = '%s/%s/query' % (rest_url, layer['id'])
+    rows = 0
+    with open(csv_path, 'w') as fh:
+        writer = None
+        for feature in load_features(query_url, token, set(), extent):
+            row = convrow(feature)
+            row['layer_name'] = layer['name']
+            row['layer_id'] = layer['id']
+            row['source_name'] = data['name']
+            row['source_title'] = data['title']
+            row['source_url'] = data['url']
+            rows = rows + 1
 
-        if not len(features):
-            log.info("[%(name)s] Empty", layer)
-            continue
+            if writer is None:
+                writer = DictWriter(fh, row.keys())
+                writer.writeheader()
 
-        csv_url = store_layer_to_csv(res_name, data, layer, features)
+            writer.writerow(row)
 
+    if rows > 1:
+        url = archive.upload_file(csv_path)
         index_table.upsert({
             'resource': res_name,
             'tag': archive.tag,
-            'csv_url': csv_url,
-            'features': len(features),
+            'csv_url': url,
+            'features': rows,
             'layer_name': layer['name'],
             'layer_id': layer['id'],
             'source_name': data['name'],
@@ -274,11 +248,27 @@ def scrape_layers(sess, data, token, rest_url):
             'source_url': data['url']
         }, ['resource'])
 
+    os.unlink(csv_path)
+
+
+def scrape_layers(data, token, rest_url):
+    # This is the actual scraping of the ESRI API.
+    log.info('Scraping: %(title)s', data)
+    params = {
+        'f': 'json'
+    }
+    if token is not None:
+        params['token'] = token
+    res = requests.get(rest_url, params=params)
+    site_info = res.json()
+    extent = site_info['fullExtent']
+    for layer in site_info.get('layers'):
+        scrape_layer(data, token, rest_url, extent, layer)
+
 
 def scrape_configs():
     for name, url in SITES.items():
-        sess = requests.Session()
-        res = sess.get(url)
+        res = requests.get(url)
         # some ugly stuff to extraxt the access token from the portal
         # site.
         groups = re.search(r"MainPage\.Init\('(.*)'", res.content)
@@ -304,9 +294,7 @@ def scrape_configs():
             for service in cfg['MapServices']:
                 if service['MapServiceType'] in ['Dynamic', 'Features']:
                     token = token or service.get('ArcGISToken')
-                    # pprint(service)
-                    rest_url = service['RestUrl']
-                    scrape_layers(sess, data, token, rest_url)
+                    scrape_layers(data, token, service['RestUrl'])
         except Exception, e:
             log.exception(e)
 
