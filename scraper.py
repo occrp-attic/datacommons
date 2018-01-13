@@ -8,11 +8,11 @@ from pprint import pprint  # noqa
 from normality import slugify
 from datetime import datetime
 from unicodecsv import DictWriter
-from morphium import Archive, env
+from morphium import InternetArchive, env
 
 log = logging.getLogger('flexicadastre')
 db_uri = env('DATABASE_URI', 'sqlite:///data.sqlite')
-archive = Archive(bucket='archive.pudo.org', prefix='flexicadastre')
+archive = InternetArchive('flexicadastre')
 data_path = env('DATA_PATH', 'data')
 database = dataset.connect(db_uri)
 index_table = database['data']

@@ -2,4 +2,4 @@ requests
 dataset
 lxml
 unicodecsv
-morphium
+morphium >= 0.2.0
