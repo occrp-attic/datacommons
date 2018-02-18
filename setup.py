@@ -10,7 +10,9 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples', 'test']),
     namespace_packages=[],
-    package_data={},
+    package_data={
+        '': ['flexicadastre/config/*']
+    },
     include_package_data=True,
     zip_safe=False,
     install_requires=[
