@@ -7,7 +7,7 @@ from pprint import pprint  # noqa
 from flexicadastre.util import convert_data
 from flexicadastre.commodities import COMMODITIES
 
-PARTIES_RE = re.compile(r'(.*) \((\s*\d*\s*%?\s*)\)')
+PARTIES_RE = re.compile(r'(.*) \((\s*\d*([\.,]\d+)\s*%?\s*)\)')
 PARTIES_FIELDS = ['Parties', 'Applicant', 'Operador', 'Operador_L',
                   'Company', 'Lic_Holder', 'CONSORTIUM']
 COMMODITIES_FIELDS = ['Commodities', 'CommoditiesCd', 'Commodity']
@@ -41,9 +41,9 @@ def parse_parties(record):
             if match is not None:
                 name = match.group(1).strip()
                 share = match.group(2).strip()
-                yield name, field, share
+                yield field, name, share
             else:
-                yield name, field, None
+                yield field, name, None
 
 
 def feature(context, data):
