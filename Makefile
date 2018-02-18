@@ -1,6 +1,19 @@
+MAPPINGS_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-run:
-	docker run -ti flexicadastre python scraper.py
+all: \
+	crawl.cd \
+	crawl.ci \
+	crawl.gn \
+	crawl.ke \
+	crawl.lr \
+	crawl.mw \
+	crawl.mz \
+	crawl.na \
+	crawl.pg \
+	crawl.rw \
+	crawl.ss \
+	crawl.ug \
+	crawl.zm
 
-build:
-	docker build -t flexicadastre .
+crawl.%:
+	memorious run $*_flexicadastre
