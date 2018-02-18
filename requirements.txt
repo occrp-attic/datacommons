@@ -1,5 +1,0 @@
-requests
-dataset
-lxml
-unicodecsv
-morphium >= 0.2.0

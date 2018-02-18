@@ -1,0 +1,42 @@
+name: ug_flexicadastre
+description: "[FlexiCadastre] Uganda Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/uganda/
+      layers:
+        - Applications
+        - Mining Leases
+        - Location Licenses
+        - Exploration Licenses
+        - Retention Licenses
+        - ActiveLicenses
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: ug_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: ug_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: ug_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

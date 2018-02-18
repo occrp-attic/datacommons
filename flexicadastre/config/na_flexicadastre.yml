@@ -1,0 +1,45 @@
+name: na_flexicadastre
+description: "[FlexiCadastre] Namibia Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/Namibia/
+      layers:
+        - Hydrocarbon Licences
+        - Mining Licences
+        - Mining Claims
+        - Mineral Deposit Retention Licences
+        - Exclusive Prospecting Licences
+        - Reconnaissance Licences
+        - Exclusive Reconnaissance Licences
+        - Applications
+        - ActiveLicenses
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: na_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: na_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: na_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

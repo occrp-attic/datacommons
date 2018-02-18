@@ -1,14 +1,12 @@
 # flexicadastre
 
-The ``scraper.py`` scripts is an importer for [FlexiCadastre](http://www.spatialdimension.com/Map-Portals), a GIS solution developed by SpatialDimension and used to store extractives licensing info for a variety of countries.
-
-This scraper is run automatically on ``morph.io``. You can find the runtime status and the scraped data at: [https://morph.io/pudo/flexicadastre](https://morph.io/pudo/flexicadastre).
+An importer for [FlexiCadastre](http://www.spatialdimension.com/Map-Portals), a GIS solution developed by SpatialDimension and used to store extractives licensing info for a variety of countries.
 
 ## License
 
 The MIT License (MIT)
 
-Copyright (c) 2015-2017 Friedrich Lindenberg
+Copyright (c) 2015-2018 Friedrich Lindenberg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

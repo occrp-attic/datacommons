@@ -1,0 +1,48 @@
+name: mz_flexicadastre
+description: "[FlexiCadastre] Mozambique Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/mozambique/en/
+      layers:
+        - Blocos de Hidrocarbonetos - Em Vigor
+        - Autorização de Recursos Minerais para Construção
+        - Autorização para Investigação Geológica
+        - Certificado Mineiro
+        - Concessão Mineira
+        - Licença de Prospecção e Pesquisa
+        - Licença de Reconhecimento
+        - Licença de Processamento Mineiro
+        - Licença de Tratamento Mineiro
+        - Todas Licenças Extinto
+        - Licenses
+        - Applications
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: mz_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: mz_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: mz_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']
