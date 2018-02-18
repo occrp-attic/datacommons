@@ -1,0 +1,49 @@
+name: zm_flexicadastre
+description: "[FlexiCadastre] Zambia Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/zambia/
+      layers:
+        - Petroleum Licenses
+        - Applications
+        - Small Scale Exploration Licences
+        - Large Scale Exploration Licences
+        - Large Scale Mining Licences
+        - Small Scale Mining Licences
+        - Artisinal Mining Rights
+        - Mineral Processing Licences
+        - Prospecting Permits (2008)
+        - Prospecting Licences (2008)
+        - Large Scale Gemstone Licences (2008)
+        - Small Scale Gemstone Licences (2008)
+        - ActiveLicenses
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: zm_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: zm_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: zm_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

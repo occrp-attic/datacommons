@@ -8,8 +8,9 @@ from flexicadastre.util import convert_data
 from flexicadastre.commodities import COMMODITIES
 
 PARTIES_RE = re.compile(r'(.*) \((\s*\d*\s*%?\s*)\)')
-PARTIES_FIELDS = ['Parties', 'Applicant', 'Operador', 'Operador_L', 'Company']
-COMMODITIES_FIELDS = ['Commodities', 'CommoditiesCd']
+PARTIES_FIELDS = ['Parties', 'Applicant', 'Operador', 'Operador_L',
+                  'Company', 'Lic_Holder', 'CONSORTIUM']
+COMMODITIES_FIELDS = ['Commodities', 'CommoditiesCd', 'Commodity']
 
 
 def parse_commodities(record):
@@ -70,6 +71,7 @@ def feature(context, data):
         parties += 1
 
     if parties == 0:
-        pprint(record)
+        context.emit_warning("No parties: %s - %s" %
+                             (record['LayerName'], record_id))
 
     context.emit(data=record)

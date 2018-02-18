@@ -1,0 +1,52 @@
+name: gn_flexicadastre
+description: "[FlexiCadastre] Portail du Cadastre Minier de la République de Guinée"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://guinee.cadastreminier.org/
+      layers:
+        - Licenses
+        - Applications
+        - Inactive
+        - Recherche de Carrières
+        - Reconnaisance
+        - Autorisation d'Exploitation Artisanale
+        - Carrière Temporaire
+        - Carrières Permanent
+        - Carrières Publique
+        - Recherche Industrielle
+        - Recherche Semi Industrielle
+        - Exploitation Industrielle par Dragage
+        - Carrière Temporaire
+        - Exploitation Minière Industrielle
+        - Exploitation Semi Industrielle par Dragage
+        - Exploitation Minière Semi-Industrielle
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: gn_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: gn_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: gn_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

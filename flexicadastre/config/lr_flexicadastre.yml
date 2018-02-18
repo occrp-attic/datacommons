@@ -1,0 +1,43 @@
+name: lr_flexicadastre
+description: "[FlexiCadastre] Liberia National Concession Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/liberia/
+      layers:
+        - Forest Management Contract
+        - Timber Sale Contract
+        - Agricultural Concession
+        - Mineral Development Agreements
+        - Oil & Gas
+        - DEL
+        - MEL
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: lr_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: lr_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: lr_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

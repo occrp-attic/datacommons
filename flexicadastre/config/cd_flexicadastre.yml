@@ -1,0 +1,49 @@
+name: cd_flexicadastre
+description: "[FlexiCadastre] DRC Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/drc/en/
+      layers:
+        - Zone d'Exploitation Artisanale
+        - ActiveLicenses
+        - Permis d''Exploitation de la Petite Mine
+        - Permis d''Exploitation des Rejets
+        - Autorisation de Recherches des Produits de Carrières
+        - Autorisation d''Exploitation de Carrières Permanente
+        - Permis d''Exploitation
+        - Permis d'Exploitation
+        - Permis de Recherches
+        - Permis d'Exploitation de Petite Mine
+        - Permis d'Exploitation des Rejets
+        - Autorisation de Recherches des Produits de Carrières
+        - Autorisation d'Exploitation de Carrière Permanente
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: cd_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: cd_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: cd_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

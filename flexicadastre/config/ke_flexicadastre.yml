@@ -1,0 +1,45 @@
+name: ke_flexicadastre
+description: "[FlexiCadastre] Kenya Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: https://portal.miningcadastre.go.ke/mapportal/
+      # TODO: there seems to be a large amount of faulty data entry 
+      # here, where license holders have been entered into the ApplNo
+      # field. Maybe we need to re-map this.
+      layers:
+        - Mining
+        - Exploration
+        - Old Law Licences
+        - Artisanal / Quarry
+        - Applications
+        - New Law Licences
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: ke_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: ke_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: ke_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

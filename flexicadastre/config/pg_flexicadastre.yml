@@ -1,0 +1,46 @@
+name: pg_flexicadastre
+description: "[FlexiCadastre] PNG Mining Cadastre Portal"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portal.mra.gov.pg/Map/
+      layers:
+        - Mining Lease
+        - Special Mining Lease
+        - Alluvial Mining Lease
+        - Lease for Mining Purpose
+        - Exploration License
+        # - 30 Day Reserved Areas
+        # - ThirtyDayReservedAreas
+        - ActiveLicenses
+        - Applications
+        - ApplicationsInTime
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: pg_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: pg_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: pg_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']

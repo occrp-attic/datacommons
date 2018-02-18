@@ -1,0 +1,49 @@
+name: ci_flexicadastre
+description: "[FlexiCadastre] Portail du Cadastre Minier de la Côte d'Ivoire"
+schedule: weekly
+pipeline:
+  init:
+    method: flexicadastre.crawler:layers
+    params:
+      url: http://portals.flexicadastre.com/cotedivoire/
+      layers:
+        - PR Réservé
+        - PR (Permis de Recherches)
+        - AP (Autorisation de Prospection)
+        - PE (Permis d'Exploitation)
+        - AESI
+        - AEA
+        - AECA
+        - AXCA
+        - AECI - Concassés
+        - AECI - Meubles
+        - AXCI - Concassés
+        - AXCI - Meubles
+        - ActiveLicenses
+    handle:
+      pass: layer
+  layer:
+    method: flexicadastre.crawler:layer
+    handle:
+      pass: feature
+  feature:
+    method: flexicadastre.parser:feature
+    handle:
+      commodity: commodity
+      party: party
+      pass: record
+  record:
+    method: db
+    params:
+      table: ci_flexicadastre
+      unique: ['FeatureId']
+  party:
+    method: db
+    params:
+      table: ci_flexicadastre_party
+      unique: ['FeatureId', 'Party', 'Share']
+  commodity:
+    method: db
+    params:
+      table: ci_flexicadastre_commodity
+      unique: ['FeatureId', 'Commodity']
