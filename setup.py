@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='flexicadastre',
-    version='0.1',
+    version='0.2',
     author='Friedrich Lindenberg',
     author_email='friedrich@pudo.org',
     url='http://github.com/pudo/flexicadastre',
@@ -21,6 +21,6 @@ setup(
     entry_points={
        'memorious.plugins': [
             'flexicadastre = flexicadastre:init'
-        ] 
+        ]
     }
 )
