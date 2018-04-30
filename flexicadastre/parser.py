@@ -53,6 +53,8 @@ def feature(context, data):
     record['PortalTitle'] = data.pop('portal_title')
     record['PortalURL'] = data.pop('portal_url')
     record['LayerName'] = data.pop('name')
+    record['Interest'] = record.get('Interest')
+    record['Area'] = record.get('Area')
 
     for commodity in parse_commodities(record):
         context.emit(rule='commodity', data={
