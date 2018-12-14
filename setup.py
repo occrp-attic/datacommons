@@ -16,7 +16,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'memorious >= 0.4'
+        'memorious >= 0.7.20'
     ],
     entry_points={
        'memorious.plugins': [
