@@ -3,7 +3,7 @@ description: "[FlexiCadastre] DRC Mining Cadastre Portal"
 schedule: weekly
 pipeline:
   init:
-    method: flexicadastre.crawler:layers
+    method: datacommons.crawlers.flexicadastre.crawler:layers
     params:
       url: http://portals.flexicadastre.com/drc/en/
       layers:
@@ -23,11 +23,11 @@ pipeline:
     handle:
       pass: layer
   layer:
-    method: flexicadastre.crawler:layer
+    method: datacommons.crawlers.flexicadastre.crawler:layer
     handle:
       pass: feature
   feature:
-    method: flexicadastre.parser:feature
+    method: datacommons.crawlers.flexicadastre.parser:feature
     handle:
       commodity: commodity
       party: party

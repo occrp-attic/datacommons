@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 import re
 from pprint import pprint  # noqa
 
-from flexicadastre.util import convert_data
-from flexicadastre.commodities import COMMODITIES
+from datacommons.crawlers.flexicadastre.util import convert_data
+from datacommons.crawlers.flexicadastre.commodities import COMMODITIES
 
 PARTIES_RE = re.compile(r'(.*) \((\s*\d*([\.,]\d+)\s*%?\s*)\)')
 PARTIES_FIELDS = ['Parties', 'Applicant', 'Operador', 'Operador_L',

@@ -3,6 +3,8 @@ import json
 import copy
 from pprint import pprint  # noqa
 
+import requests
+
 from memorious.helpers import make_id
 
 
@@ -70,8 +72,12 @@ def load_features(context, data, seen, extent):
         q['token'] = data['token']
     q['geometry'] = json.dumps(extent)
     url = '%s/%s/query' % (data['rest_url'], data['id'])
-    res = context.http.get(url, params=q)
-    for feature in res.json.get('features', []):
+    # TODO: For some weird reason, using context.http returns 403 errors.
+    # Things I have tried: reseting the session, setting stealth to true so
+    # that the User-Agent is randomized, getting rid of all request headers.
+    # None of it helps. So using requests instead because it works.
+    res = requests.get(url, params=q).json()
+    for feature in res.get('features', []):
         attrs = feature.get('attributes')
         obj = make_id(
             data.get('name'),
@@ -87,7 +93,7 @@ def load_features(context, data, seen, extent):
             seen.add(obj)
             attrs['FeatureId'] = obj
             yield attrs
-    if res.json.get('exceededTransferLimit'):
+    if res.get('exceededTransferLimit'):
         for child in split_envelope(extent):
             for attrs in load_features(context, data, seen, child):
                 yield attrs
@@ -134,9 +140,9 @@ def layers(context, data):
         }
         if token is not None:
             params['token'] = token
-        res = context.http.get(service['RestUrl'], params=params)
-        for layer in res.json.get('layers'):
-            layer['extent'] = res.json['fullExtent']
+        res = requests.get(service['RestUrl'], params=params).json()
+        for layer in res.get('layers'):
+            layer['extent'] = res['fullExtent']
             layer['token'] = token
             layer['rest_url'] = service['RestUrl']
             layer.update(data)

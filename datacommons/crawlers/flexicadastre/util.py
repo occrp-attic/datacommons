@@ -40,6 +40,8 @@ def convert_data(data):
         if name in REMOVE:
             continue
         if uname == 'AREA':
+            if isinstance(val, str):
+                val = val.split(' ')[0]
             val = min(int(val), (2 ** 31) - 1)
         val = stringify(val)
         if val is not None:

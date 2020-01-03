@@ -1,2 +1,2 @@
 include README.md
-recursive-include flexicadastre/configs/
+recursive-include datacommons/configs/

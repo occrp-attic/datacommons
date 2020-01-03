@@ -2,25 +2,25 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='flexicadastre',
+    name='datacommons',
     version='0.2',
-    author='Friedrich Lindenberg',
-    author_email='friedrich@pudo.org',
-    url='http://github.com/pudo/flexicadastre',
+    author='Organized Crime and Corruption Reporting Project',
+    author_email='data@occrp.org',
+    url='http://github.com/alephdata/datacommons',
     license='MIT',
     packages=find_packages(exclude=['ez_setup', 'examples', 'test']),
     namespace_packages=[],
     package_data={
-        '': ['flexicadastre/config/*']
+        '': ['datacommons/config/*']
     },
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'memorious >= 0.7.20'
+        'memorious >= 1.4.1'
     ],
     entry_points={
        'memorious.plugins': [
-            'flexicadastre = flexicadastre:init'
+            'datacommons = datacommons:init'
         ]
     }
 )

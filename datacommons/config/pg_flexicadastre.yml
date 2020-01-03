@@ -3,7 +3,7 @@ description: "[FlexiCadastre] PNG Mining Cadastre Portal"
 schedule: weekly
 pipeline:
   init:
-    method: flexicadastre.crawler:layers
+    method: datacommons.crawlers.flexicadastre.crawler:layers
     params:
       url: http://portal.mra.gov.pg/Map/
       layers:
@@ -20,11 +20,11 @@ pipeline:
     handle:
       pass: layer
   layer:
-    method: flexicadastre.crawler:layer
+    method: datacommons.crawlers.flexicadastre.crawler:layer
     handle:
       pass: feature
   feature:
-    method: flexicadastre.parser:feature
+    method: datacommons.crawlers.flexicadastre.parser:feature
     handle:
       commodity: commodity
       party: party
