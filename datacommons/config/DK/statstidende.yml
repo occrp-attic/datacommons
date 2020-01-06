@@ -1,0 +1,27 @@
+name: dk_statstidende
+description: Denmark Statstidende
+schedule: monthly
+pipeline:
+  init:
+    method: datacommons.crawlers.dk.statstidende:sequence
+    handle:
+      pass: seed
+  seed:
+    method: seed
+    params:
+      urls: 
+        - https://www.statstidende.dk/Public/PublicationPDF/Statstidende_%(year)s_%(issue)s.pdf
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      rules:
+        and:
+          - mime_group: documents
+    handle:
+      pass: store
+  store:
+    method: aleph_emit
+    params:
+      collection: dk_statstidende

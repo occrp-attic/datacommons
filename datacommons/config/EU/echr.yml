@@ -1,0 +1,14 @@
+name: eu_echr
+description: European Court of Human Rights
+schedule: weekly
+pipeline:
+  init:
+    method: datacommons.crawlers.eu.echr:search
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: store
+  store:
+    method: aleph_emit

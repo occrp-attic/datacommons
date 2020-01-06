@@ -1,0 +1,18 @@
+name: zz_eccourts
+description: Eastern Carribean Supreme Court
+schedule: monthly
+languages:
+  - en
+pipeline:
+  init:
+    method: datacommons.crawlers.zz.eccourts:posts
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      http_rate_limit: 30
+    handle:
+      pass: store
+  store:
+    method: aleph_emit

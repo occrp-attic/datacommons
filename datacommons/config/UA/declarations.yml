@@ -1,0 +1,266 @@
+name: ua_declarations
+description: Declarations of Ukrainian government employees
+# schedule: monthly
+pipeline:
+  init:
+    method: seed
+    params:
+      urls:
+        - "https://declarations.com.ua/static/data/full_export.json.bz2"
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.ua.declarations:parse
+    handle:
+      person: store_person
+      relatives: store_relative
+      real_estate: store_real_estate
+      real_estate_rights: store_real_estate_right
+      real_estate_construction: store_real_estate_construction
+      real_estate_construction_rights: store_real_estate_construction_right
+      movable_property: store_movable_property
+      movable_property_rights: store_movable_property_right
+      vehicles: store_vehicle
+      vehicles_rights: store_vehicle_right
+      securities: store_security
+      securities_rights: store_security_right
+      corporate_rights: store_corporate_right
+      corporate_rights_rights: store_corporate_rights_right
+      legal_entities: store_legal_entities
+      legal_entities_rights: store_legal_entities_right
+      intangible_assets: store_intangible_assets
+      intangible_assets_rights: store_intangible_assets_right
+      revenues: store_revenues
+      revenues_rights: store_revenues_right
+      cash_assets: store_cash_assets
+      cash_assets_rights: store_cash_assets_right
+      financial_obligations: store_financial_obligations
+      financial_obligations_rights: store_financial_obligations_right
+      financial_obligations_guarantors: store_financial_obligations_guarantor
+      financial_obligations_guarantor_realty: store_financial_obligations_guarantors_realty
+      expenses: store_expenses
+      other_jobs: store_other_jobs
+      memberships: store_memberships
+  store_person:
+    method: db
+    params:
+      table: "ua_declarations_persons"
+      unique:
+        - id
+        - declaration_year
+  store_relative:
+    method: db
+    params:
+      table: "ua_declarations_relatives"
+      unique:
+        #- related_to
+        #- declaration_year
+        #- name
+        - declaration_id
+        - id
+  store_real_estate:
+    method: db
+    params:
+      table: "ua_declarations_real_estates"
+      unique:
+        - declaration_id
+        - id
+  store_real_estate_right:
+    method: db
+    params:
+      table: "ua_declarations_real_estate_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_real_estate_construction:
+    method: db
+    params:
+      table: "ua_declarations_real_estate_constructions"
+      unique:
+        - declaration_id
+        - id
+  store_real_estate_construction_right:
+    method: db
+    params:
+      table: "ua_declarations_real_estate_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_movable_property:
+    method: db
+    params:
+      table: "ua_declarations_movable_property"
+      unique:
+        - declaration_id
+        - id
+  store_movable_property_right:
+    method: db
+    params:
+      table: "ua_declarations_movable_property_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_vehicle:
+    method: db
+    params:
+      table: "ua_declarations_vehicles"
+      unique:
+        - declaration_id
+        - id
+  store_vehicle_right:
+    method: db
+    params:
+      table: "ua_declarations_vehicle_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_security:
+    method: db
+    params:
+      table: "ua_declarations_securities"
+      unique:
+        - declaration_id
+        - id
+  store_security_right:
+    method: db
+    params:
+      table: "ua_declarations_securities_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_corporate_right:
+    method: db
+    params:
+      table: "ua_declarations_corporate_rights"
+      unique:
+        - declaration_id
+        - id
+  store_corporate_rights_right:
+    method: db
+    params:
+      table: "ua_declarations_corporate_rights_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_legal_entities:
+    method: db
+    params:
+      table: "ua_declarations_legal_entities"
+      unique:
+        - declaration_id
+        - id
+  store_legal_entities_right:
+    method: db
+    params:
+      table: "ua_declarations_legal_entities_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_intangible_assets:
+    method: db
+    params:
+      table: "ua_declarations_intangible_assets"
+      unique:
+        - declaration_id
+        - id
+  store_intangible_assets_right:
+    method: db
+    params:
+      table: "ua_declarations_intangible_assets_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_revenues:
+    method: db
+    params:
+      table: "ua_declarations_revenues"
+      unique:
+        - declaration_id
+        - id
+  store_revenues_right:
+    method: db
+    params:
+      table: "ua_declarations_revenues_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_cash_assets:
+    method: db
+    params:
+      table: "ua_declarations_cash_assets"
+      unique:
+        - declaration_id
+        - id
+  store_cash_assets_right:
+    method: db
+    params:
+      table: "ua_declarations_cash_assets_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_financial_obligations:
+    method: db
+    params:
+      table: "ua_declarations_financial_obligations"
+      unique:
+        - declaration_id
+        - id
+  store_financial_obligations_right:
+    method: db
+    params:
+      table: "ua_declarations_financial_obligations_rights"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_financial_obligations_guarantor:
+    method: db
+    params:
+      table: "ua_declarations_financial_obligations_guarantors"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_financial_obligations_guarantors_realty:
+    method: db
+    params:
+      table: "ua_declarations_financial_obligations_guarantors_realty"
+      unique:
+        - declaration_id
+        - id
+        - object_id
+  store_expenses:
+    method: db
+    params:
+      table: "ua_declarations_expenses"
+      unique:
+        - declaration_id
+        - id
+  store_other_jobs:
+    method: db
+    params:
+      table: "ua_declarations_other_jobs"
+      unique:
+        - declaration_id
+        - id
+  store_memberships:
+    method: db
+    params:
+      table: "ua_declarations_memberships"
+      unique:
+        - declaration_id
+        - id

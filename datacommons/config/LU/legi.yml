@@ -1,0 +1,30 @@
+name: lu_legi
+description: Journal officiel du Grand-Duché de Luxembourg 
+schedule: monthly
+pipeline:
+  init:
+    method: seed
+    params:
+      urls:
+        - 'http://www.etat.lu/mesoc/entr/archives/frame/index.php?year=1996'
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      rules:
+        domain: etat.lu
+    handle:
+      pass: parse
+  parse:
+    method: parse
+    params:
+      store:
+        mime_group: documents
+    handle:
+      store: store
+      fetch: fetch
+  store:
+    method: aleph_emit
+    params:
+      collection: 'lu_legi'

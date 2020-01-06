@@ -1,0 +1,62 @@
+name: us_fbi_foia
+description: FBI FOIA Library
+# schedule: monthly
+languages:
+  - en
+countries:
+  - us
+pipeline:
+  init:
+    method: seed
+    params:
+      url: https://vault.fbi.gov/reading-room-index
+    handle:
+      pass: fetch_first_page
+  fetch_first_page:
+    method: fetch
+    handle:
+      pass: subjectids
+  subjectids:
+    method: parse
+    params:
+      include_paths:
+        - './/*[@id="content"]'
+    handle:
+      fetch: dl_viewer_page
+  dl_viewer_page:
+    method: fetch
+    handle:
+      pass: viewerlinks
+  viewerlinks:
+    method: parse
+    params:
+      include_paths:
+        - './/*[@id="content"]'
+    handle:
+      fetch: dl_detail_page
+  dl_detail_page:
+    method: fetch
+    params:
+      rules:
+        pattern: '.*view'
+    handle:
+      pass: parse_detail_page
+  parse_detail_page:
+    method: parse
+    params:
+      meta:
+        title: './/h1'
+    handle:
+      fetch: dl_pdf
+  dl_pdf:
+    method: fetch
+    params:
+      rules:
+        pattern: '.*at_download/file'
+    handle:
+      pass: store_aleph
+  store_aleph:
+    method: aleph_emit
+    params:
+      collection: "us_fbi_foia"
+

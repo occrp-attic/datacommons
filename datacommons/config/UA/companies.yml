@@ -1,0 +1,39 @@
+name: ua_companies
+description: Ukraine companies registry
+pipeline:
+  init:
+    method: seed
+    params:
+      urls:
+        - http://data.gov.ua/file/182386/download?token=-mLqkDKy
+    handle:
+      pass: fetch_archive
+  fetch_archive:
+    method: fetch
+    handle:
+      pass: extract
+  extract:
+    method: extract
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.ua.companies:parse
+    handle:
+      store_company: store_company
+      store_founder: store_founder
+      store_entrepreneur: store_entrepreneur
+  store_company:
+    method: db
+    params:
+      table: "ua_companies_companies"
+      unique: ["edrpou"]
+  store_founder:
+    method: db
+    params:
+      table: "ua_companies_founders"
+      unique: ["company_name", "company_edrpou", "founder"]
+  store_entrepreneur:
+    method: db
+    params:
+      table: "ua_companies_entrepreneurs"
+      unique: ["full_name", "address"]

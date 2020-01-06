@@ -1,0 +1,15 @@
+name: zz_icij_paradisepapers
+description: ICIJ Paradise Papers
+pipeline:
+  init:
+    method: seed
+    params:
+      url: https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_paradise_papers.2017-12-19.zip
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: load
+  load:
+    method: datacommons.crawlers.zz.icij_dump:load

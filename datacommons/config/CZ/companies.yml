@@ -1,0 +1,23 @@
+name: cz_companies
+description: Company data from the public register in ARES
+schedule: monthly
+pipeline:
+  init:
+    method: seed
+    params:
+      urls:
+        - http://wwwinfo.mfcr.cz/ares/ares_vreo_all.tar.gz
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: extract
+  extract:
+    method: extract
+    handle:
+      pass: store
+  store:
+    method: datacommons.crawlers.cz.companies:store
+    params:
+      table: "cz_companies"

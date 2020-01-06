@@ -1,0 +1,30 @@
+name: ch_sogc
+description: "Swiss Official Gazette of Commerce"
+# schedule: monthly
+pipeline:
+  init:
+    method: dates
+    params:
+      days: 1
+      steps: 3650
+      format: '%d.%m.%Y'
+    handle:
+      pass: args
+  args:
+    method: datacommons.crawlers.ch.sogc:args
+    handle:
+      pass: search
+  search:
+    method: datacommons.crawlers.ch.sogc:search
+    params:
+      url: https://www.sogc.ch/shabforms/servlet/Search
+    handle:
+      pass: fetch
+  fetch:
+    handle:
+      pass: store
+    method: fetch
+  store:
+    method: aleph_emit
+    params:
+      collection: ch_sogc

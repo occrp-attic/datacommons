@@ -1,0 +1,24 @@
+description: "US Foreign Agent Registrations (FARA)"
+name: us_fara
+schedule: monthly
+stealthy: true
+pipeline:
+  init:
+    method: datacommons.crawlers.us.fara:init
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.us.fara:parse
+    handle:
+      fetch: fetch
+      page: page
+  page:
+    method: fetch
+    handle:
+      pass: parse
+  fetch:
+    method: fetch
+    handle:
+      pass: store
+  store:
+    method: aleph_emit

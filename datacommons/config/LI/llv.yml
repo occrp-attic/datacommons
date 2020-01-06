@@ -1,0 +1,42 @@
+name: li_llv
+description: Liechtensteinische Landesverwaltungen
+schedule: monthly
+countries: 
+  - li
+languages:
+  - de
+pipeline:
+  init:
+    method: datacommons.crawlers.li.llv:latest
+    params:
+      rss_url: http://apps-rss.llv.li/amtsblatt/rubrik/%s
+    handle:
+      pass: seq
+  seq:
+    method: sequence
+    params:
+      step: -1
+      stop: 1
+    handle:
+      pass: seed
+  seed:
+    method: seed
+    params:
+      urls:
+        - https://apps.llv.li/amtsblatt/kundmachung/display/%(number)s
+    handle: 
+      pass: crawl
+  crawl:
+    method: datacommons.crawlers.li.llv:crawl
+    params:
+      print_url: https://apps.llv.li/amtsblatt/kundmachung/printPub
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: store
+  store:
+    method: aleph_emit
+    params:
+      collection: 'li_llv'

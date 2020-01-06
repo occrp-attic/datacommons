@@ -1,0 +1,49 @@
+name: us_cialib
+description: CIA Electronic Reading Room
+# schedule: monthly
+languages:
+  - en
+countries:
+  - us
+pipeline:
+  init:
+    method: dates
+    params:
+      format: '%Y-%m-%d'
+      steps: 0
+    handle:
+      pass: seed
+  seed:
+    method: seed
+    params:
+      url: 'https://www.cia.gov/library/readingroom/advanced-search-view?keyword=&label=&sm_field_document_number=&sm_field_original_classification=&ds_field_pub_date_op=%%3C&ds_field_pub_date%%5Bvalue%%5D=%(date)s&ds_field_pub_date%%5Bmin%%5D=&ds_field_pub_date%%5Bmax%%5D=&sm_field_content_type=&sm_field_case_number='
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      rules: 
+        or:
+          - pattern: '.*library/readingroom/.*'
+    handle:
+      pass: parse
+  parse:
+    method: parse
+    params:
+      include_paths:
+        - './/table'
+        - './/ul[@class="pager"]'
+        - './/span[@class="file"]'
+      meta:
+        title: './/div[@id="region-content"]//h1'
+      store:
+        or:
+          - mime_group: documents
+          - mime_group: archives
+    handle:
+      fetch: fetch
+      store: store
+  store:
+    method: aleph_emit
+    params:
+      collection: us_cia_readingroom

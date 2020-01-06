@@ -1,0 +1,25 @@
+name: zz_worldbank_procurement
+description: "World Bank Contract Awards"
+schedule: weekly
+pipeline:
+  init:
+    method: seed
+    params:
+      urls:
+        - "https://finances.worldbank.org/api/views/kdui-wcs3/rows.json"
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.zz.worldbank_procurement:parse
+    handle:
+      award: store_award
+  store_award:
+    method: db
+    params:
+      table: "zz_worldbank_procurement"
+      unique:
+        - id

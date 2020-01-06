@@ -1,0 +1,69 @@
+name: md_companies
+description: "Moldova company registry"
+schedule: monthly
+pipeline:
+  init:
+    method: seed
+    params:
+      url: http://date.gov.md/ckan/en/dataset/11736-date-din-registrul-de-stat-al-unitatilor-de-drept-privind-intreprinderile-inregistrate-in-repu
+    handle:
+      pass: fetch_catalog
+  fetch_catalog:
+    method: fetch
+    handle:
+      pass: parse_catalog
+  parse_catalog:
+    method: datacommons.crawlers.md.companies:catalog
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.md.companies:parse
+    handle:
+      unlicensed: store_unlicensed
+      licensed: store_licensed
+      founder: store_founder
+      director: store_director
+      company: store_company
+  store_unlicensed:
+    method: db
+    params:
+      table: md_companies_unlicensed
+      unique:
+        - Company_IDNO
+        - Company_Name
+        - ID
+  store_licensed:
+    method: db
+    params:
+      table: md_companies_licensed
+      unique:
+        - Company_IDNO
+        - Company_Name
+        - ID
+  store_founder:
+    method: db
+    params:
+      table: md_companies_founder
+      unique:
+        - Company_IDNO
+        - Company_Name
+        - Founder
+  store_director:
+    method: db
+    params:
+      table: md_companies_director
+      unique:
+        - Company_IDNO
+        - Company_Name
+        - Director
+  store_company:
+    method: db
+    params:
+      table: md_companies
+      unique:
+        - IDNO
+        - Denumirea_completă

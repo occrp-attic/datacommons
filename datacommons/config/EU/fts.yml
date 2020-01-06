@@ -1,0 +1,37 @@
+name: eu_fts
+description: EU Financial Transparency System
+#  The beneficiaries of funding from the EU budget implemented directly the Commission (at Headquarters or in EU delegations to non-EU countries) and other EU bodies such as executive agencies ('direct management'), and beneficiaries of the European Development Fund.
+# schedule: weekly
+pipeline:
+  init:
+    method: dates
+    params:
+      format: '%Y'
+      begin: '2007'
+      # begin: '2015'
+      days: 365
+    handle:
+      pass: seed
+  seed:
+    method: seed
+    params:
+      url: 'http://ec.europa.eu/budget/remote/fts/dl/export_%(date)s_en.zip'
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: extract
+  extract:
+    method: extract
+    handle:
+      pass: parse
+  parse:
+    method: datacommons.crawlers.eu.fts:parse
+    handle:
+      pass: store
+  store:
+    method: db
+    params:
+      table: eu_fts
+      unique: ["source_url", "source_id"]

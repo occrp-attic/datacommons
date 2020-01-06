@@ -1,0 +1,40 @@
+name: sc_seylii
+description: "SeyLII, Seychelles Legal Information Institute"
+stealthy: true
+schedule: weekly
+pipeline:
+  init:
+    method: seed
+    params:
+      url: https://www.seylii.org/
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      http_rate_limit: 30
+      emit_errors: true
+      rules:  
+        and:
+          - domain: seylii.org
+          - not:
+              or:
+                - mime_group: assets
+                - mime_group: images
+    handle:
+      pass: parse
+  parse:
+    method: parse
+    params:
+      store:
+        or:
+          - mime_group: archives
+          - mime_group: documents
+    handle:
+      fetch: fetch
+      store: store
+  store:
+    method: aleph_emit
+    params:
+      countries:
+        - sc

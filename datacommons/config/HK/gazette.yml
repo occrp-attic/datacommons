@@ -1,0 +1,43 @@
+description: "Hong Kong Gazette"
+name: hk_gazette
+schedule: weekly
+pipeline:
+  init:
+    method: dates
+    params:
+      format: "%Y"
+      begin: '1999'
+      days: 365
+    handle:
+      pass: seed
+  seed:
+    method: seed
+    params:
+      url: http://www.gld.gov.hk/egazette/english/search_gazette/search.php?Year=%(date)s&Date=&NoticeNo=&Title=&type=mg&submit=Search
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    params:
+      rules:
+        and:
+          - pattern: https://www.gld.gov.hk/egazette/.*
+    handle:
+      pass: parse
+  parse:
+    method: parse
+    params:
+      include_paths:
+        - './/table'
+      store:
+        and:
+          - mime_group: documents
+          - pattern: https://www.gld.gov.hk/egazette/pdf/.*
+    handle:
+      store: store
+      # fetch: fetch
+  store:
+    method: aleph_emit
+    params:
+      countries: 
+        - hk

@@ -1,0 +1,22 @@
+name: us_corpwatch
+description: "USA Subsidiary Declarations"
+schedule: monthly
+pipeline:
+  init:
+    method: seed
+    params:
+      url: "http://api.corpwatch.org/documentation/db_dump/corpwatch_api_tables_csv.tar.gz"
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: extract
+  extract:
+    method: extract
+    handle:
+      pass: load_file
+  load_file:
+    method: us.corpwatch:load_file
+    params:
+      table: "us_corpwatch"

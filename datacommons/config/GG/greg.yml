@@ -1,0 +1,25 @@
+name: gg_greg
+description: Guernsey Registry
+schedule: monthly
+stealthy: true
+pipeline:
+  init:
+    method: sequence
+    params:
+      start: 1
+      stop: 80000
+      delay: 2
+    handle:
+      pass: search
+  search:
+    method: datacommons.crawlers.gg.greg:search
+    handle:
+      pass: fetch
+  fetch:
+    method: fetch
+    handle:
+      pass: store
+  store:
+    method: datacommons.crawlers.gg.greg:parse
+    params:
+      table: gg_greg
