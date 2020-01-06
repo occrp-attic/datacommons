@@ -1,12 +1,14 @@
-# flexicadastre
 
-An importer for [FlexiCadastre](http://www.spatialdimension.com/Map-Portals), a GIS solution developed by SpatialDimension and used to store extractives licensing info for a variety of countries.
+# Datacommons
+
+A fleet of Memorious scrapers for crawling various open data sources.
 
 ## License
 
 The MIT License (MIT)
 
 Copyright (c) 2015-2018 Friedrich Lindenberg
+Copyright (c) 2020 Organized Crime and Corruption Reporting Project
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
