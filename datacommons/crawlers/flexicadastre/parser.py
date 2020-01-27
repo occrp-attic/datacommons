@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import re
 from pprint import pprint  # noqa
 
-from datacommons.crawlers.flexicadastre.util import convert_data
+from datacommons.crawlers.flexicadastre.util import convert_data, EntityEmitter  # noqa
 from datacommons.crawlers.flexicadastre.commodities import COMMODITIES
 
 PARTIES_RE = re.compile(r'(.*) \((\s*\d*([\.,]\d+)\s*%?\s*)\)')
@@ -56,24 +56,49 @@ def feature(context, data):
     record['Interest'] = record.get('Interest')
     record['Area'] = record.get('Area')
 
-    for commodity in parse_commodities(record):
-        context.emit(rule='commodity', data={
-            'Commodity': commodity,
-            'FeatureId': record_id
-        })
+    emitter = EntityEmitter(context)
+
+    commodities = parse_commodities(record)
+    concession = emitter.make('License')
+    concession.make_id(record_id)
+    concession.add('name', record.get('Type'))
+    concession.add('type', [record.get('Type'), record.get('TypeGroup')])
+    concession.add('country', record.get('Jurisdic'))
+    concession.add('sourceUrl', record.get('PortalURL'))
+    concession.add('description', record.get('Interest'))
+    concession.add('amount', record.get('AreaValue'))
+    area = record.get('Area')
+    area_unit = record.get('AreaUnit')
+    if area_unit is not None:
+        area = "%s %s" % (area, area_unit)
+    concession.add('area', area)
+    concession.add('commodities', commodities)
+    concession.add('notes', record.get('Comments'))
+    emitter.emit(concession)
 
     parties = 0
     for field, party, share in parse_parties(record):
-        context.emit(rule='party', data={
-            'Party': party,
-            'Share': share,
-            'Field': field,
-            'FeatureId': record_id
-        })
+        entity = emitter.make('LegalEntity')
+        entity.make_id(party)
+        entity.add('name', party)
+        entity.add('sourceUrl', record.get('PortalURL'))
+        ownership = emitter.make('Ownership')
+        ownership.make_id(record_id, party, share)
+        ownership.add('owner', entity)
+        ownership.add('asset', concession)
+        ownership.add('status', record.get('Status'))
+        ownership.add('percentage', share)
+        ownership.add('startDate', record.get('DteGranted'))
+        ownership.add('endDate', record.get('DteExpires'))
+        ownership.add('sourceUrl', record.get('PortalURL'))
+        ownership.add('recordId', record.get('Code'))
+        emitter.emit(entity)
+        emitter.emit(ownership)
+
         parties += 1
 
     if parties == 0:
         context.emit_warning("No parties: %s - %s" %
                              (record['LayerName'], record_id))
 
-    context.emit(data=record)
+    emitter.finalize()

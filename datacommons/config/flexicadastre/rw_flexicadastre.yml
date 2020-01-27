@@ -28,22 +28,3 @@ pipeline:
       pass: feature
   feature:
     method: datacommons.crawlers.flexicadastre.parser:feature
-    handle:
-      commodity: commodity
-      party: party
-      pass: record
-  record:
-    method: db
-    params:
-      table: rw_flexicadastre
-      unique: ['FeatureId']
-  party:
-    method: db
-    params:
-      table: rw_flexicadastre_party
-      unique: ['FeatureId', 'Party', 'Share']
-  commodity:
-    method: db
-    params:
-      table: rw_flexicadastre_commodity
-      unique: ['FeatureId', 'Commodity']
