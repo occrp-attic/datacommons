@@ -15,11 +15,3 @@ pipeline:
       pass: parse
   parse:
     method: datacommons.crawlers.zz.worldbank_procurement:parse
-    handle:
-      award: store_award
-  store_award:
-    method: db
-    params:
-      table: "zz_worldbank_procurement"
-      unique:
-        - id
