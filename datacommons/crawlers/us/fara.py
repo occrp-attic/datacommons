@@ -1,4 +1,6 @@
 # import time
+import json
+from normality import stringify
 from banal import ensure_list, is_mapping
 from memorious.helpers.key import make_id
 
@@ -11,12 +13,29 @@ SHORTFORM_URL = 'https://efile.fara.gov/api/v1/ShortFormRegistrants/json/%s/%s'
 PRINCIPALS_URL = 'https://efile.fara.gov/api/v1/ForeignPrincipals/json/%s/%s'
 
 
+def _get_row_data(row):
+    data = {}
+    for key, value in row.items():
+        key = stringify(key)
+        if key is None:
+            continue
+        value = stringify(value)
+        data[key] = value
+    return value
+
+
 def _get_rows(context, res):
-    for key, rows in res.json.items():
+    try:
+        data = res.json
+    except json.JSONDecodeError as exc:
+        context.emit_warning("Request error: %s" % res.text, exc)
+        return
+    for key, rows in data.items():
         if not is_mapping(rows):
             context.log.info("Response [%s]: %s", res.url, rows)
             return
         for row in ensure_list(rows.get('ROW')):
+            row = _get_row_data(row)
             row['DataTable'] = key
             yield row
 
