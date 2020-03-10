@@ -1,24 +1,39 @@
 description: "US Foreign Agent Registrations (FARA)"
 name: us_fara
-schedule: monthly
-stealthy: true
+schedule: weekly
+# stealthy: true
 pipeline:
   init:
-    method: datacommons.crawlers.us.fara:init
+    method: datacommons.crawlers.us.fara:index
+    params:
+      http_rate_limit: 5
     handle:
-      pass: parse
-  parse:
-    method: datacommons.crawlers.us.fara:parse
+      documents: documents
+      shortform: shortform
+      principals: principals
+  shortform:
+    method: datacommons.crawlers.us.fara:shortform
+    params:
+      http_rate_limit: 5
+  principals:
+    method: datacommons.crawlers.us.fara:principals
+    params:
+      http_rate_limit: 5
+  documents:
+    method: datacommons.crawlers.us.fara:documents
+    params:
+      http_rate_limit: 5
     handle:
-      fetch: fetch
-      page: page
-  page:
+      pass: fetch_doc
+  fetch_doc:
     method: fetch
+    params:
+      http_rate_limit: 5
     handle:
-      pass: parse
-  fetch:
-    method: fetch
-    handle:
-      pass: store
-  store:
+      pass: store_doc
+  store_doc:
     method: aleph_emit
+    handle:
+      pass: db_doc
+  db_doc:
+    method: datacommons.crawlers.us.fara:db_doc

@@ -1,81 +1,80 @@
-from urllib.parse import urljoin
-import json
+# import time
+from banal import ensure_list, is_mapping
+from memorious.helpers.key import make_id
 
 # https://www.fara.gov/search.html
-INIT_URL = 'https://efile.fara.gov/pls/apex/f?p=135:10:6633045485587::NO::P10_DOCTYPE:ALL'  # noqa
-FLOW_URL = 'https://efile.fara.gov/ords/wwv_flow.accept'
+# https://efile.fara.gov/ords/f?p=107:3:0::NO:::
+STATES = ('Active', 'Terminated')
+REGISTRANTS_URL = 'https://efile.fara.gov/api/v1/Registrants/json/%s'
+DOCS_URL = 'https://efile.fara.gov/api/v1/RegDocs/json/%s'
+SHORTFORM_URL = 'https://efile.fara.gov/api/v1/ShortFormRegistrants/json/%s/%s'
+PRINCIPALS_URL = 'https://efile.fara.gov/api/v1/ForeignPrincipals/json/%s/%s'
 
 
-def init(context, data):
-    form_page = context.http.get(INIT_URL)
-    doc = form_page.html
-
-    args = {
-        "p_json": json.dumps({
-                "salt": doc.xpath('//*[@id="pSalt"]')[0].get('value'),
-                "pageItems": {
-                    "itemsToSubmit": [
-                        {
-                            "n": "P10_DOCTYPE",
-                            "v": "ALL"
-                        },
-                        {
-                            "n": "P10_STATUS",
-                            "v": "ALL"
-                        },
-                        {
-                            "n": "P10_REG_NUMBER",
-                            "v": ""
-                        },
-                        {
-                            "n": "P10_REG_NAME",
-                            "v": ""
-                        },
-                        {
-                            "n": "P10_REGNAME_FUZZY",
-                            "v": "E"
-                        },
-                        {
-                            "n": "P10_STAMP1",
-                            "v": ""
-                        },
-                        {
-                            "n": "P10_STAMP2",
-                            "v": ""
-                        },
-                        {
-                            "n": "P10_SHOW_SEARCH",
-                            "v": "",
-                            "ck": doc.xpath('//*[@data-for="P10_SHOW_SEARCH"]')[0].get('value'),  # noqa
-                        },
-                        {
-                            "n": "P10_REGDATE_LABEL",
-                            "v": "Registration Date"
-                        }
-                    ],
-                    "protected": doc.xpath('//*[@id="pPageItemsProtected"]')[0].get('value'),  # noqa
-                    "rowVersion": ""
-                }
-            }),
-        "p_flow_id": doc.xpath('//*[@id="pFlowId"]')[0].get('value'),
-        "p_flow_step_id": doc.xpath('//*[@id="pFlowStepId"]')[0].get('value'),
-        "p_instance": doc.xpath('//*[@id="pInstance"]')[0].get('value'),
-        "p_page_submission_id": doc.xpath('//*[@id="pPageSubmissionId"]')[0].get('value'),  # noqa
-        "p_request": 'SEARCH',
-        "p_reload_on_submit": 'A'
-    }
-
-    result = context.http.post(FLOW_URL, data=args)
-    data.update(result.serialize())
-    context.emit(data=data)
+def _get_rows(context, res):
+    for key, rows in res.json.items():
+        if not is_mapping(rows):
+            context.log.info("Response [%s]: %s", res.url, rows)
+            return
+        for row in ensure_list(rows.get('ROW')):
+            row['DataTable'] = key
+            yield row
 
 
-def parse(context, data):
-    with context.http.rehash(data) as result:
-        table = result.html.find('.//table[@id="report_R249155080118566622"]')
-        for link in table.findall('.//a'):
-            url = urljoin(INIT_URL, link.get('href'))
-            if link.text is not None and 'Next' in link.text:
-                context.emit(rule='page', data={'url': url})
-            if '/docs/' in url:
-                context.emit(rule='fetch', data={'url': url})
+def _get_row_id(row):
+    items = [v for (k, v) in sorted(row.items()) if k != 'ROWNUM']
+    return str(make_id(*items))
+
+
+def index(context, data):
+    table = context.datastore['us_fara_registrants']
+    for state in STATES:
+        res = context.http.get(REGISTRANTS_URL % state)
+        # time.sleep(3)
+        for row in _get_rows(context, res):
+            row['Status'] = state
+            table.upsert(row, ['Registration_Number'])
+            context.emit(rule='documents', data=row)
+            context.emit(rule='shortform', data=row)
+            context.emit(rule='principals', data=row)
+
+
+def shortform(context, data):
+    table = context.datastore['us_fara_shortform']
+    reg_nr = data.get('Registration_Number')
+    for state in STATES:
+        res = context.http.get(SHORTFORM_URL % (state, reg_nr))
+        # time.sleep(3)
+        for row in _get_rows(context, res):
+            row['Status'] = state
+            row['RowId'] = _get_row_id(row)
+            table.upsert(row, ['RowId'])
+
+
+def principals(context, data):
+    table = context.datastore['us_fara_principals']
+    reg_nr = data.get('Registration_Number')
+    for state in STATES:
+        res = context.http.get(PRINCIPALS_URL % (state, reg_nr))
+        # time.sleep(3)
+        for row in _get_rows(context, res):
+            row['Status'] = state
+            row['RowId'] = _get_row_id(row)
+            table.upsert(row, ['RowId'])
+
+
+def documents(context, data):
+    reg_nr = data.get('Registration_Number')
+    res = context.http.get(DOCS_URL % reg_nr)
+    # time.sleep(3)
+    for row in _get_rows(context, res):
+        row['url'] = row.pop('Url', None)
+        context.emit(data=row)
+
+
+def db_doc(context, data):
+    data.pop('headers', None)
+    data.pop('request_id', None)
+    data.pop('aleph_document', None)
+    table = context.datastore['us_fara_documents']
+    table.upsert(data, ['url'])
