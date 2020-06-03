@@ -1,11 +1,6 @@
-# coding: utf-8
-from __future__ import unicode_literals
-
 from pprint import pprint  # noqa
 from datetime import datetime
 from normality import stringify
-import balkhash
-from followthemoney import model
 
 
 REMOVE = ['Shape.STArea()', 'Shape.STLength()', 'Shape.len',
@@ -48,26 +43,3 @@ def convert_data(data):
         if val is not None:
             row[name] = val
     return row
-
-
-class EntityEmitter(object):
-
-    def __init__(self, context):
-        self.fragment = 0
-        self.log = context.log
-        self.name = context.crawler.name
-        self.dataset = balkhash.init(self.name)
-        self.bulk = self.dataset.bulk()
-
-    def make(self, schema):
-        entity = model.make_entity(schema, key_prefix=self.name)
-        return entity
-
-    def emit(self, entity, rule='pass'):
-        if entity.id is None:
-            raise RuntimeError("Entity has no ID: %r", entity)
-        self.bulk.put(entity, fragment=str(self.fragment))
-        self.fragment += 1
-
-    def finalize(self):
-        self.bulk.flush()

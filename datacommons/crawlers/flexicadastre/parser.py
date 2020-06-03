@@ -1,10 +1,8 @@
-# coding: utf-8
-from __future__ import unicode_literals
-
 import re
 from pprint import pprint  # noqa
+from ftmstore.memorious import EntityEmitter
 
-from datacommons.crawlers.flexicadastre.util import convert_data, EntityEmitter  # noqa
+from datacommons.crawlers.flexicadastre.util import convert_data  # noqa
 from datacommons.crawlers.flexicadastre.commodities import COMMODITIES
 
 PARTIES_RE = re.compile(r'(.*) \((\s*\d*([\.,]\d+)\s*%?\s*)\)')
@@ -57,7 +55,6 @@ def feature(context, data):
     record['Area'] = record.get('Area')
 
     emitter = EntityEmitter(context)
-
     commodities = parse_commodities(record)
     concession = emitter.make('License')
     concession.make_id(record_id)

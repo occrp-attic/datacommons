@@ -16,7 +16,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'memorious >= 1.4.1'
+        'memorious >= 1.4.1',
+        'followthemoney-store >= 2.1.6'
     ],
     entry_points={
        'memorious.plugins': [
