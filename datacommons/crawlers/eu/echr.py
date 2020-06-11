@@ -23,7 +23,6 @@ def emit_result(context, result):
         'foreign_id': result.get('itemid'),
         'url': url
     }
-
     lang_code = result.get('languageisocode').lower()
     if lang_code in LANGUAGES:
         data['languages'] = [LANGUAGES.get(lang_code)]
