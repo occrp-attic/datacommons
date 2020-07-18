@@ -4,7 +4,7 @@ pipeline:
   init:
     method: seed
     params:
-      url: https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_paradise_papers.2017-12-19.zip
+      url: https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_paradise_papers.2018-02-14.zip
     handle:
       pass: fetch
   fetch:

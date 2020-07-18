@@ -3,18 +3,23 @@ from datetime import datetime
 from normality import stringify
 
 
-REMOVE = ['Shape.STArea()', 'Shape.STLength()', 'Shape.len',
-          'SHAPE.len', 'SHAPE.fid' 'FullShapeGeometryWKT',
-          'Shape__Length']
+REMOVE = [
+    "Shape.STArea()",
+    "Shape.STLength()",
+    "Shape.len",
+    "SHAPE.len",
+    "SHAPE.fid" "FullShapeGeometryWKT",
+    "Shape__Length",
+]
 
 RENAME = {
-    'SDELiberiaProd.DBO.MLMELicenses_20160119.Area': 'Area',
-    'Shape.area': 'Area',
-    'SHAPE.area': 'Area',
-    'Shape__Area': 'Area',
-    'CODE': 'Code',
-    'NAME': 'Name',
-    'STATUS': 'Status'
+    "SDELiberiaProd.DBO.MLMELicenses_20160119.Area": "Area",
+    "Shape.area": "Area",
+    "SHAPE.area": "Area",
+    "Shape__Area": "Area",
+    "CODE": "Code",
+    "NAME": "Name",
+    "STATUS": "Status",
 }
 
 
@@ -26,18 +31,22 @@ def convert_data(data):
         name = RENAME.get(name, name)
         uname = name.upper()
         if val is not None and isinstance(val, int):
-            if uname.startswith('DTE') or uname.endswith('_DAT') \
-                    or uname.endswith('_DATE') or uname.endswith('_D') \
-                    or uname == 'COMPLETED':
+            if (
+                uname.startswith("DTE")
+                or uname.endswith("_DAT")
+                or uname.endswith("_DATE")
+                or uname.endswith("_D")
+                or uname == "COMPLETED"
+            ):
                 dt = datetime.fromtimestamp(int(val) / 1000)
                 val = dt.date().isoformat()
-        if uname.startswith('GUID'):
+        if uname.startswith("GUID"):
             continue
         if name in REMOVE:
             continue
-        if uname == 'AREA':
+        if uname == "AREA":
             if isinstance(val, str):
-                val = val.split(' ')[0]
+                val = val.split(" ")[0]
             val = min(int(val), (2 ** 31) - 1)
         val = stringify(val)
         if val is not None:
