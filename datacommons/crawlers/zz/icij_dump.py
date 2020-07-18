@@ -1,6 +1,8 @@
-from normality import slugify, stringify
+import io
 from csv import DictReader
 from zipfile import ZipFile
+from normality import slugify, stringify
+from dataset.chunked import ChunkedInsert
 
 
 def load_file(context, zip, name):
@@ -9,17 +11,13 @@ def load_file(context, zip, name):
     table_name = "%s_%s" % (context.crawler.name, section)
     table = context.datastore[table_name]
     table.drop()
+    fh = io.TextIOWrapper(fh)
     reader = DictReader(fh, delimiter=",", quotechar='"')
-    chunk = []
+    chunk = ChunkedInsert(table)
     for i, row in enumerate(reader, 1):
         row = {slugify(k, sep="_"): stringify(v) for (k, v) in row.items()}
-        chunk.append(row)
-        if len(chunk) >= 20000:
-            context.log.info("Loaded [%s]: %s rows...", table_name, i)
-            table.insert_many(chunk)
-            chunk = []
-    if len(chunk):
-        table.insert_many(chunk)
+        chunk.insert(row)
+    chunk.flush()
     context.log.info("Done [%s]: %s rows...", table_name, i)
 
 
