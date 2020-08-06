@@ -21,7 +21,7 @@ def _get_row_data(row):
             continue
         value = stringify(value)
         data[key] = value
-    return value
+    return data
 
 
 def _get_rows(context, res):
