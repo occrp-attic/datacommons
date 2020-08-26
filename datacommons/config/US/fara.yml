@@ -6,7 +6,7 @@ pipeline:
   init:
     method: datacommons.crawlers.us.fara:index
     params:
-      http_rate_limit: 5
+      http_rate_limit: 10
     handle:
       documents: documents
       shortform: shortform
