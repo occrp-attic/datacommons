@@ -19,16 +19,15 @@ def _get_row_data(row):
         key = stringify(key)
         if key is None:
             continue
-        value = stringify(value)
-        data[key] = value
+        data[key] = stringify(value)
     return data
 
 
 def _get_rows(context, res):
     try:
         data = res.json
-    except json.JSONDecodeError as exc:
-        context.emit_warning("Request error: %s" % res.text, exc)
+    except json.JSONDecodeError:
+        context.emit_warning("Request error: %s" % res.text)
         return
     for key, rows in data.items():
         if not is_mapping(rows):
@@ -36,7 +35,7 @@ def _get_rows(context, res):
             return
         for row in ensure_list(rows.get("ROW")):
             row = _get_row_data(row)
-            row["DataTable"] = key
+            row["DataTable"] = stringify(key)
             yield row
 
 
