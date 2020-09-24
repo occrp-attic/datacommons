@@ -3,6 +3,7 @@ import json
 from normality import stringify
 from banal import ensure_list, is_mapping
 from memorious.helpers.key import make_id
+from urllib.parse import urlparse
 
 # https://www.fara.gov/search.html
 # https://efile.fara.gov/ords/f?p=107:3:0::NO:::
@@ -44,11 +45,18 @@ def _get_row_id(row):
     return str(make_id(*items))
 
 
+def _get_filename(row):
+    url = row.get('url', None)
+    if url is not None:
+        return '.'.join(url.split('/')[-1].split('.')[:-1])
+    else:
+        return None
+
+
 def index(context, data):
     table = context.datastore["us_fara_registrants"]
     for state in STATES:
         res = context.http.get(REGISTRANTS_URL % state)
-        # time.sleep(3)
         for row in _get_rows(context, res):
             row["Status"] = state
             table.upsert(row, ["Registration_Number"])
@@ -62,7 +70,6 @@ def shortform(context, data):
     reg_nr = data.get("Registration_Number")
     for state in STATES:
         res = context.http.get(SHORTFORM_URL % (state, reg_nr))
-        # time.sleep(3)
         for row in _get_rows(context, res):
             row["Status"] = state
             row["RowId"] = _get_row_id(row)
@@ -74,7 +81,6 @@ def principals(context, data):
     reg_nr = data.get("Registration_Number")
     for state in STATES:
         res = context.http.get(PRINCIPALS_URL % (state, reg_nr))
-        # time.sleep(3)
         for row in _get_rows(context, res):
             row["Status"] = state
             row["RowId"] = _get_row_id(row)
@@ -84,10 +90,12 @@ def principals(context, data):
 def documents(context, data):
     reg_nr = data.get("Registration_Number")
     res = context.http.get(DOCS_URL % reg_nr)
-    # time.sleep(3)
     for row in _get_rows(context, res):
         row["url"] = row.pop("Url", None)
-        context.emit(data=row)
+        parsedurl = urlparse(row["url"])
+        if parsedurl.scheme and parsedurl.netloc:
+            row["file_name"] = _get_filename(row)
+            context.emit(data=row)
 
 
 def db_doc(context, data):
